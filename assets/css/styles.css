@@ -13,13 +13,13 @@
     --success: #10b981;
     --danger: #ef4444;
     --warning: #f59e0b;
-    
+
     /* Layout */
     --sidebar-width: 260px;
     --header-height: 70px;
     --border-radius: 12px;
     --glass-blur: 12px;
-    
+
     /* Spacing */
     --space-sm: 0.5rem;
     --space-md: 1rem;
@@ -67,6 +67,254 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-secondary);
+}
+
+/* Main App Layout */
+#app {
+    display: flex;
+    min-height: 100vh;
+}
+
+#sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-lg);
+    z-index: 100;
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: var(--space-xl);
+    color: var(--text-primary);
+}
+
+.logo i {
+    color: var(--accent-color);
+}
+
+#sidebar nav ul {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+#sidebar nav ul li a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    border-radius: 12px;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+#sidebar nav ul li a i {
+    width: 20px;
+}
+
+#sidebar nav ul li.active a,
+#sidebar nav ul li a:hover {
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--accent-color);
+}
+
+/* Main Content Area */
+#main-content {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+}
+
+#top-bar {
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-lg);
+    position: sticky;
+    top: 0;
+    z-index: 90;
+    margin: var(--space-md);
+    border-radius: var(--border-radius);
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    background: rgba(255, 255, 255, 0.05);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: 10px;
+    width: 400px;
+    border: 1px solid var(--border-color);
+}
+
+.search-bar input {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    width: 100%;
+    font-size: 0.9rem;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.notifications {
+    position: relative;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.notifications .badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    background: var(--danger);
+    border-radius: 50%;
+}
+
+.avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 2px solid var(--accent-color);
+}
+
+.user-profile span {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Dashboard Styles */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+}
+
+.stat-card {
+    padding: var(--space-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.stat-icon.blue {
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--accent-color);
+}
+
+.stat-icon.green {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+}
+
+.stat-icon.orange {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning);
+}
+
+.stat-icon.red {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.stat-info h3 {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.stat-info p {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.dashboard-sections {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--space-lg);
+}
+
+.content-box {
+    padding: var(--space-lg);
+    min-height: 300px;
+}
+
+.box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-lg);
+}
+
+.box-header h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.activity-item i {
+    color: var(--accent-color);
+}
+
+.activity-details p {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.activity-details span {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
 }
 
 /* Base Layout Classes */
