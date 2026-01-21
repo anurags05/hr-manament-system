@@ -41,6 +41,12 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('hr_employees', JSON.stringify(state.employees));
     }
 
+    function closeAllModals() {
+        const modals = document.querySelectorAll('.modal-overlay');
+        modals.forEach(m => m.style.display = 'none');
+        state.editingId = null;
+    }
+
     function renderCurrentView() {
         const container = document.getElementById('view-container');
 
@@ -220,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="modal-content glass">
                     <div class="box-header">
                         <h2 id="modal-title">Add New Employee</h2>
-                        <i data-lucide="x" id="close-modal" style="cursor:pointer;"></i>
+                        <button class="btn-close-icon" id="close-modal"><i data-lucide="x"></i></button>
                     </div>
                     <form id="add-employee-form">
                         <input type="hidden" id="edit-id">
@@ -293,8 +299,8 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.style.display = 'flex';
         };
 
-        if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
-        if (cancelBtn) cancelBtn.onclick = () => modal.style.display = 'none';
+        if (closeBtn) closeBtn.onclick = () => closeAllModals();
+        if (cancelBtn) cancelBtn.onclick = () => closeAllModals();
 
         if (form) {
             form.onsubmit = (e) => {
@@ -379,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="modal-content glass">
                     <div class="box-header">
                         <h2>Request Time Off</h2>
-                        <i data-lucide="x" id="close-leave-modal" style="cursor:pointer;"></i>
+                        <button class="btn-close-icon" id="close-leave-modal"><i data-lucide="x"></i></button>
                     </div>
                     <form id="leave-form">
                         <div class="form-group">
@@ -428,8 +434,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const form = document.getElementById('leave-form');
 
         if (btn) btn.onclick = () => modal.style.display = 'flex';
-        document.getElementById('close-leave-modal').onclick = () => modal.style.display = 'none';
-        document.getElementById('btn-cancel-leave').onclick = () => modal.style.display = 'none';
+        document.getElementById('close-leave-modal').onclick = () => closeAllModals();
+        document.getElementById('btn-cancel-leave').onclick = () => closeAllModals();
 
         if (form) {
             form.onsubmit = (e) => {
@@ -572,7 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="modal-content glass payslip-modal">
                     <div class="box-header">
                         <h2>Employee Payslip</h2>
-                        <i data-lucide="x" id="close-payslip" style="cursor:pointer;"></i>
+                        <button class="btn-close-icon" id="close-payslip"><i data-lucide="x"></i></button>
                     </div>
                     <div id="payslip-content">
                         <!-- Dynamic Content -->
@@ -587,8 +593,8 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        document.getElementById('close-payslip').onclick = () => document.getElementById('payslip-modal').style.display = 'none';
-        document.getElementById('btn-cancel-payslip').onclick = () => document.getElementById('payslip-modal').style.display = 'none';
+        document.getElementById('close-payslip').onclick = () => closeAllModals();
+        document.getElementById('btn-cancel-payslip').onclick = () => closeAllModals();
     }
 
     window.generatePayslip = (id) => {
@@ -674,6 +680,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const page = link.innerText.trim().toLowerCase();
                 window.navTo(page);
             });
+        });
+
+        // Modal UX: Close on Escape or Overlay Click
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeAllModals();
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) closeAllModals();
         });
     }
 });

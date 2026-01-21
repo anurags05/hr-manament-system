@@ -516,6 +516,27 @@ body {
     margin-top: var(--space-lg);
 }
 
+.btn-close-icon {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+}
+
+.btn-close-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.btn-close-icon i {
+    width: 20px;
+    height: 20px;
+}
+
 /* Leave Management Styles */
 .leave-grid {
     display: grid;
