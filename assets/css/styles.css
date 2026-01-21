@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+:root {
+    /* Color Palette - Premium Dark Theme */
+    --bg-color: #0f172a;
+    --sidebar-bg: #1e293b;
+    --card-bg: rgba(30, 41, 59, 0.7);
+    --accent-color: #38bdf8;
+    --accent-hover: #0ea5e9;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    
+    /* Layout */
+    --sidebar-width: 260px;
+    --header-height: 70px;
+    --border-radius: 12px;
+    --glass-blur: 12px;
+    
+    /* Spacing */
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    line-height: 1.5;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+/* Glassmorphism Utility */
+.glass {
+    background: var(--card-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-color);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--sidebar-bg);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* Base Layout Classes */
+.container {
+    padding: var(--space-lg);
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    outline: none;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+button:active {
+    transform: scale(0.95);
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+ul {
+    list-style: none;
+}

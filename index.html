@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Pro | Employee Management System</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Styles -->
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <!-- Icons (Lucide) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <div id="app">
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="glass">
+            <div class="logo">
+                <i data-lucide="shield-check" class="accent"></i>
+                <span>HR Pro</span>
+            </div>
+            <nav>
+                <ul>
+                    <li class="active"><a href="#"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+                    <li><a href="#"><i data-lucide="users"></i> Directory</a></li>
+                    <li><a href="#"><i data-lucide="calendar"></i> Leaves</a></li>
+                    <li><a href="#"><i data-lucide="clock"></i> Attendance</a></li>
+                    <li><a href="#"><i data-lucide="credit-card"></i> Payroll</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <header id="top-bar" class="glass">
+                <div class="search-bar">
+                    <i data-lucide="search"></i>
+                    <input type="text" placeholder="Search employees, tasks...">
+                </div>
+                <div class="user-profile">
+                    <div class="notifications">
+                        <i data-lucide="bell"></i>
+                        <span class="badge"></span>
+                    </div>
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Admin" class="avatar">
+                    <span>Admin</span>
+                </div>
+            </header>
+
+            <section id="view-container" class="container">
+                <!-- Views will be injected here by app.js -->
+                <h1>Welcome to HR Pro</h1>
+                <p>Establishing the foundation...</p>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="assets/js/app.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>
