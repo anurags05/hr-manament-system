@@ -648,6 +648,94 @@ body {
     font-size: 0.9rem;
 }
 
+/* Payroll Styles */
+.payroll-table th,
+.payroll-table td {
+    padding: 15px;
+}
+
+.payslip-modal {
+    max-width: 800px;
+    padding: var(--space-xl);
+}
+
+.payslip-header {
+    text-align: center;
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: var(--space-md);
+    margin-bottom: var(--space-xl);
+}
+
+.payslip-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xl);
+    margin-bottom: var(--space-xl);
+}
+
+.payslip-section h4 {
+    color: var(--accent-color);
+    margin-bottom: var(--space-md);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.payslip-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.95rem;
+}
+
+.payslip-row.total {
+    border-top: 2px solid var(--border-color);
+    margin-top: 10px;
+    padding-top: 15px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.print-btn {
+    background: var(--text-primary);
+    color: var(--bg-color);
+    padding: 10px 20px;
+}
+
+@media print {
+    .modal-overlay {
+        background: white;
+        backdrop-filter: none;
+    }
+
+    .modal-content.glass {
+        background: white;
+        color: black;
+        border: none;
+        box-shadow: none;
+    }
+
+    .sidebar,
+    .top-bar,
+    .modal-footer,
+    #close-modal {
+        display: none !important;
+    }
+
+    .payslip-header {
+        border-bottom: 2px solid black;
+    }
+
+    .payslip-section h4 {
+        color: black;
+        border-bottom: 1px solid black;
+    }
+
+    .payslip-row.total {
+        color: black;
+    }
+}
+
 /* Base Layout Classes */
 .container {
     padding: var(--space-lg);

@@ -57,6 +57,9 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'attendance':
                 renderAttendance(container);
                 break;
+            case 'payroll':
+                renderPayroll(container);
+                break;
             default:
                 container.innerHTML = `<h1>${state.currentPage.charAt(0).toUpperCase() + state.currentPage.slice(1)}</h1><p>Coming soon...</p>`;
         }
@@ -508,6 +511,127 @@ document.addEventListener('DOMContentLoaded', () => {
         const diff = (d2 - d1) / 1000 / 60 / 60;
         return diff >= 0 ? diff.toFixed(1) + ' hrs' : '--';
     }
+
+    // --- Payroll View ---
+    function renderPayroll(container) {
+        container.innerHTML = `
+            <div class="directory-header">
+                <h2>Payroll Management</h2>
+                <div class="directory-controls">
+                     <span style="color:var(--text-secondary); font-size:0.9rem">Cycle: Jan 2024</span>
+                </div>
+            </div>
+            <div class="content-box glass">
+                <div class="attendance-table-container">
+                    <table class="attendance-table payroll-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Role</th>
+                                <th>Base Salary</th>
+                                <th>Bonuses</th>
+                                <th>Deductions</th>
+                                <th>Net Pay</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${state.employees.map(emp => {
+            const base = 5000 + (emp.id * 500); // Mock salary
+            const bonus = 200;
+            const deduction = 100;
+            const net = base + bonus - deduction;
+            return `
+                                    <tr>
+                                        <td>
+                                            <div style="display:flex; align-items:center; gap:10px;">
+                                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${emp.name}" style="width:30px; height:30px; border-radius:50%">
+                                                <span>${emp.name}</span>
+                                            </div>
+                                        </td>
+                                        <td>${emp.role}</td>
+                                        <td>$${base.toLocaleString()}</td>
+                                        <td style="color:var(--success)">+$${bonus}</td>
+                                        <td style="color:var(--danger)">-$${deduction}</td>
+                                        <td style="font-weight:600">$${net.toLocaleString()}</td>
+                                        <td>
+                                            <button class="btn-outline btn-icon" onclick="window.generatePayslip(${emp.id})">
+                                                <i data-lucide="file-text"></i> Payslip
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+        }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Payslip Modal -->
+            <div class="modal-overlay" id="payslip-modal">
+                <div class="modal-content glass payslip-modal">
+                    <div class="box-header">
+                        <h2>Employee Payslip</h2>
+                        <i data-lucide="x" id="close-payslip" style="cursor:pointer;"></i>
+                    </div>
+                    <div id="payslip-content">
+                        <!-- Dynamic Content -->
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-outline" id="btn-cancel-payslip">Close</button>
+                        <button class="btn-primary print-btn" onclick="window.printPayslip()">
+                            <i data-lucide="printer"></i> Print Payslip
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('close-payslip').onclick = () => document.getElementById('payslip-modal').style.display = 'none';
+        document.getElementById('btn-cancel-payslip').onclick = () => document.getElementById('payslip-modal').style.display = 'none';
+    }
+
+    window.generatePayslip = (id) => {
+        const emp = state.employees.find(e => e.id === id);
+        if (!emp) return;
+
+        const base = 5000 + (emp.id * 500);
+        const bonus = 200;
+        const deduction = 100;
+        const net = base + bonus - deduction;
+        const month = "January 2024";
+
+        const content = `
+            <div class="payslip-header">
+                <h3>HR Pro Management</h3>
+                <p style="color:var(--text-secondary)">Monthly Salary Statement - ${month}</p>
+            </div>
+            <div class="payslip-grid">
+                <div class="payslip-section">
+                    <h4>Employee Details</h4>
+                    <div class="payslip-row"><span>Name:</span> <span>${emp.name}</span></div>
+                    <div class="payslip-row"><span>ID:</span> <span>#EMP-${emp.id.toString().padStart(4, '0')}</span></div>
+                    <div class="payslip-row"><span>Role:</span> <span>${emp.role}</span></div>
+                    <div class="payslip-row"><span>Department:</span> <span>${emp.dept}</span></div>
+                </div>
+                <div class="payslip-section">
+                    <h4>Payment Summary</h4>
+                    <div class="payslip-row"><span>Base Salary:</span> <span>$${base.toLocaleString()}</span></div>
+                    <div class="payslip-row"><span>Bonuses:</span> <span style="color:var(--success)">+$${bonus}</span></div>
+                    <div class="payslip-row"><span>Deductions:</span> <span style="color:var(--danger)">-$${deduction}</span></div>
+                    <div class="payslip-row total"><span>Net Salary:</span> <span>$${net.toLocaleString()}</span></div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('payslip-content').innerHTML = content;
+        document.getElementById('payslip-modal').style.display = 'flex';
+        if (window.lucide) lucide.createIcons();
+    };
+
+    window.printPayslip = () => {
+        window.print();
+    };
 
     // --- Global Helpers ---
     window.navTo = (page) => {
