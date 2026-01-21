@@ -317,6 +317,337 @@ body {
     color: var(--text-secondary);
 }
 
+/* Directory Styles */
+.directory-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-lg);
+}
+
+.directory-controls {
+    display: flex;
+    gap: var(--space-md);
+}
+
+.search-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-input-group i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    pointer-events: none;
+}
+
+.search-input-group input {
+    padding: 10px 15px 10px 35px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    width: 250px;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.search-input-group input:focus {
+    border-color: var(--accent-color);
+}
+
+.employee-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-lg);
+}
+
+.emp-card {
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.emp-card:hover {
+    transform: translateY(-5px);
+}
+
+.emp-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: var(--space-md);
+    border: 3px solid var(--accent-color);
+    object-fit: cover;
+}
+
+.emp-info h3 {
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+
+.emp-info p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: var(--space-md);
+}
+
+.emp-meta {
+    display: flex;
+    gap: var(--space-md);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-lg);
+}
+
+.emp-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.emp-actions {
+    display: flex;
+    gap: var(--space-sm);
+    width: 100%;
+}
+
+.btn-icon {
+    flex: 1;
+    padding: 8px;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.btn-primary {
+    background: var(--accent-color);
+    color: var(--bg-color);
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.btn-outline:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-danger-outline {
+    background: transparent;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: var(--danger);
+}
+
+.btn-danger-outline:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--danger);
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    width: 90%;
+    max-width: 500px;
+    padding: var(--space-xl);
+}
+
+.form-group {
+    margin-bottom: var(--space-md);
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+    color: var(--text-secondary);
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    outline: none;
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: var(--accent-color);
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-md);
+    margin-top: var(--space-lg);
+}
+
+/* Leave Management Styles */
+.leave-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: var(--space-lg);
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning);
+    border: 1px solid var(--warning);
+}
+
+.status-approved {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    border: 1px solid var(--success);
+}
+
+.status-rejected {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+}
+
+.leave-card {
+    padding: var(--space-lg);
+}
+
+.leave-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-md);
+}
+
+.leave-requester {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.leave-requester img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.leave-details {
+    margin: var(--space-md) 0;
+    font-size: 0.9rem;
+}
+
+.leave-details p {
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+}
+
+.leave-actions {
+    margin-top: var(--space-lg);
+    display: flex;
+    gap: var(--space-md);
+}
+
+/* Attendance Styles */
+.attendance-controls {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-xl) 0;
+}
+
+.clock-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.btn-clock {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+}
+
+.btn-clock i {
+    width: 32px;
+    height: 32px;
+}
+
+.attendance-table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.attendance-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: var(--space-md);
+}
+
+.attendance-table th,
+.attendance-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.attendance-table th {
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.attendance-table td {
+    font-size: 0.9rem;
+}
+
 /* Base Layout Classes */
 .container {
     padding: var(--space-lg);
@@ -331,6 +662,11 @@ button {
     transition: all 0.3s ease;
     border-radius: 8px;
     font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: inherit;
 }
 
 button:active {
