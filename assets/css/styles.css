@@ -138,8 +138,8 @@ body {
     width: 20px;
 }
 
-# sidebar nav ul li.active a,
-# sidebar nav ul li a:hover {
+#sidebar nav ul li.active a,
+#sidebar nav ul li a:hover {
     background: rgba(134, 239, 172, 0.1);
     color: var(--accent-color);
 }
