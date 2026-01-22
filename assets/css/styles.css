@@ -1,18 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
 
 :root {
-    /* Color Palette - Premium Dark Theme */
-    --bg-color: #0f172a;
-    --sidebar-bg: #1e293b;
-    --card-bg: rgba(30, 41, 59, 0.7);
-    --accent-color: #38bdf8;
-    --accent-hover: #0ea5e9;
+    /* Color Palette - Premium Dark Theme (Grey & Pastel Green) */
+    --bg-color: #121212;
+    --sidebar-bg: #1a1a1a;
+    --card-bg: rgba(30, 30, 30, 0.7);
+    --accent-color: #86efac;
+    --accent-hover: #4ade80;
     --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --border-color: rgba(255, 255, 255, 0.1);
-    --success: #10b981;
-    --danger: #ef4444;
-    --warning: #f59e0b;
+    --text-secondary: #a1a1aa;
+    --border-color: rgba(255, 255, 255, 0.08);
+    --success: #4ade80;
+    --danger: #f87171;
+    --warning: #fbbf24;
 
     /* Layout */
     --sidebar-width: 260px;
@@ -25,6 +25,21 @@
     --space-md: 1rem;
     --space-lg: 1.5rem;
     --space-xl: 2rem;
+}
+
+body.light-theme {
+    /* Color Palette - Premium Light Theme */
+    --bg-color: #f1f5f9;
+    --sidebar-bg: #ffffff;
+    --card-bg: rgba(255, 255, 255, 0.8);
+    --accent-color: #22c55e;
+    --accent-hover: #16a34a;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --border-color: rgba(0, 0, 0, 0.08);
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #d97706;
 }
 
 * {
@@ -123,9 +138,9 @@ body {
     width: 20px;
 }
 
-#sidebar nav ul li.active a,
-#sidebar nav ul li a:hover {
-    background: rgba(56, 189, 248, 0.1);
+# sidebar nav ul li.active a,
+# sidebar nav ul li a:hover {
+    background: rgba(134, 239, 172, 0.1);
     color: var(--accent-color);
 }
 
@@ -234,7 +249,7 @@ body {
 }
 
 .stat-icon.blue {
-    background: rgba(56, 189, 248, 0.1);
+    background: rgba(134, 239, 172, 0.1);
     color: var(--accent-color);
 }
 
@@ -633,7 +648,7 @@ body {
     font-size: 1.1rem;
     flex-direction: column;
     gap: 8px;
-    box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+    box-shadow: 0 0 30px rgba(134, 239, 172, 0.2);
 }
 
 .btn-clock i {

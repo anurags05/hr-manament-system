@@ -25,15 +25,31 @@ document.addEventListener('DOMContentLoaded', () => {
         currentUser: {
             name: 'Admin User',
             role: 'Administrator'
-        }
+        },
+        theme: localStorage.getItem('hr_theme') || 'dark'
     };
 
     // Initialize UI
     init();
 
     function init() {
+        applyTheme(state.theme);
         renderCurrentView();
         setupEventListeners();
+    }
+
+    function applyTheme(theme) {
+        const body = document.body;
+        const themeToggle = document.getElementById('theme-toggle');
+        if (theme === 'light') {
+            body.classList.add('light-theme');
+            if (themeToggle) themeToggle.innerHTML = '<i data-lucide="sun"></i>';
+        } else {
+            body.classList.remove('light-theme');
+            if (themeToggle) themeToggle.innerHTML = '<i data-lucide="moon"></i>';
+        }
+        if (window.lucide) lucide.createIcons();
+        localStorage.setItem('hr_theme', theme);
     }
 
     // Persistence
@@ -690,5 +706,14 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal-overlay')) closeAllModals();
         });
+
+        // Theme Toggle
+        const themeBtn = document.getElementById('theme-toggle');
+        if (themeBtn) {
+            themeBtn.addEventListener('click', () => {
+                state.theme = state.theme === 'dark' ? 'light' : 'dark';
+                applyTheme(state.theme);
+            });
+        }
     }
 });
