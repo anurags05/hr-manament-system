@@ -918,6 +918,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Search Palette Logic
         const paletteInput = document.getElementById('palette-input');
+        const topSearchBar = document.querySelector('.search-bar input');
+
+        if (topSearchBar) {
+            topSearchBar.addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleSearchPalette();
+            });
+            // Also handle focus for keyboard users tabbing through
+            topSearchBar.addEventListener('focus', (e) => {
+                e.preventDefault();
+                topSearchBar.blur();
+                toggleSearchPalette();
+            });
+        }
+
         if (paletteInput) {
             paletteInput.oninput = (e) => renderPaletteResults(e.target.value);
             paletteInput.onkeydown = (e) => {
