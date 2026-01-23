@@ -26,7 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
             name: 'Admin User',
             role: 'Administrator'
         },
-        theme: localStorage.getItem('hr_theme') || 'dark'
+        theme: localStorage.getItem('hr_theme') || 'dark',
+        notifications: JSON.parse(localStorage.getItem('hr_notifications')) || []
     };
 
     // Initialize UI
@@ -36,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         applyTheme(state.theme);
         renderCurrentView();
         setupEventListeners();
+        updateBadge();
     }
 
     function applyTheme(theme) {
@@ -55,7 +57,204 @@ document.addEventListener('DOMContentLoaded', () => {
     // Persistence
     function saveToStorage() {
         localStorage.setItem('hr_employees', JSON.stringify(state.employees));
+        localStorage.setItem('hr_notifications', JSON.stringify(state.notifications));
     }
+
+    function addNotification(type, title, message) {
+        const notification = {
+            id: Date.now(),
+            type,
+            title,
+            message,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            read: false
+        };
+        state.notifications.unshift(notification);
+        saveToStorage();
+        updateBadge();
+        showToast(type, title, message);
+    }
+
+    function updateBadge() {
+        const badge = document.querySelector('.notifications .badge');
+        const unreadCount = state.notifications.filter(n => !n.read).length;
+        if (badge) {
+            if (unreadCount > 0) {
+                badge.innerText = unreadCount > 9 ? '9+' : unreadCount;
+                badge.classList.add('active');
+            } else {
+                badge.classList.remove('active');
+            }
+        }
+    }
+
+    function showToast(type, title, message) {
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        const icons = {
+            success: 'check-circle',
+            info: 'info',
+            warning: 'alert-triangle',
+            error: 'x-circle'
+        };
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <i data-lucide="${icons[type] || 'info'}"></i>
+            <div class="toast-content">
+                <p>${title}</p>
+                <span>${message}</span>
+            </div>
+        `;
+
+        container.appendChild(toast);
+        if (window.lucide) lucide.createIcons();
+
+        setTimeout(() => {
+            toast.classList.add('removing');
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
+    function toggleNotifications() {
+        const dropdown = document.getElementById('notification-dropdown');
+        if (!dropdown) return;
+
+        dropdown.classList.toggle('active');
+        if (dropdown.classList.contains('active')) {
+            renderNotifications();
+        }
+    }
+
+    function renderNotifications() {
+        const list = document.getElementById('notification-list');
+        if (!list) return;
+
+        if (state.notifications.length === 0) {
+            list.innerHTML = `<div style="padding: 30px; text-align:center; color: var(--text-secondary);">No notifications yet</div>`;
+            return;
+        }
+
+        const icons = {
+            success: 'check-circle',
+            info: 'info',
+            warning: 'alert-triangle',
+            error: 'x-circle'
+        };
+
+        list.innerHTML = state.notifications.map(n => `
+            <div class="notif-item ${n.read ? '' : 'unread'}" onclick="window.markRead(${n.id})">
+                <i data-lucide="${icons[n.type] || 'info'}" class="${n.type}"></i>
+                <div class="notif-info">
+                    <h5>${n.title}</h5>
+                    <p>${n.message}</p>
+                    <span>${n.time}</span>
+                </div>
+            </div>
+        `).join('');
+        if (window.lucide) lucide.createIcons();
+    }
+
+    window.markRead = (id) => {
+        const notif = state.notifications.find(n => n.id === id);
+        if (notif) {
+            notif.read = true;
+            saveToStorage();
+            updateBadge();
+            renderNotifications();
+        }
+    };
+
+    window.markAllRead = () => {
+        state.notifications.forEach(n => n.read = true);
+        saveToStorage();
+        updateBadge();
+        renderNotifications();
+    };
+
+    function toggleSearchPalette() {
+        const palette = document.getElementById('search-palette');
+        const input = document.getElementById('palette-input');
+        if (!palette) return;
+
+        const isVisible = palette.style.display === 'flex';
+        palette.style.display = isVisible ? 'none' : 'flex';
+
+        if (!isVisible) {
+            input.value = '';
+            input.focus();
+            renderPaletteResults('');
+        }
+    }
+
+    function renderPaletteResults(query) {
+        const resultsContainer = document.getElementById('palette-results');
+        if (!resultsContainer) return;
+
+        const term = query.toLowerCase();
+
+        // 1. Static Feature Actions
+        const features = [
+            { title: 'Go to Dashboard', cat: 'Navigation', icon: 'layout-dashboard', action: () => window.navTo('dashboard') },
+            { title: 'Go to Directory', cat: 'Navigation', icon: 'users', action: () => window.navTo('directory') },
+            { title: 'Go to Leaves', cat: 'Navigation', icon: 'calendar', action: () => window.navTo('leaves') },
+            { title: 'Go to Attendance', cat: 'Navigation', icon: 'clock', action: () => window.navTo('attendance') },
+            { title: 'Go to Payroll', cat: 'Navigation', icon: 'credit-card', action: () => window.navTo('payroll') },
+            { title: 'Add New Employee', cat: 'Action', icon: 'user-plus', action: () => { window.navTo('directory'); setTimeout(() => document.getElementById('btn-add-employee')?.click(), 100); } },
+            { title: 'Request Leave', cat: 'Action', icon: 'calendar-plus', action: () => { window.navTo('leaves'); setTimeout(() => document.getElementById('btn-request-leave')?.click(), 100); } },
+            { title: 'Toggle Light/Dark Mode', cat: 'System', icon: 'sun', action: () => document.getElementById('theme-toggle')?.click() }
+        ];
+
+        // 2. Employee Results
+        const employeeResults = state.employees
+            .filter(emp => emp.name.toLowerCase().includes(term) || emp.role.toLowerCase().includes(term))
+            .map(emp => ({
+                title: emp.name,
+                cat: `Employee (${emp.role})`,
+                icon: 'user',
+                action: () => { window.navTo('directory'); setTimeout(() => window.editEmployee(emp.id), 100); }
+            }));
+
+        const allResults = [...features.filter(f => f.title.toLowerCase().includes(term)), ...employeeResults].slice(0, 8);
+
+        if (allResults.length === 0) {
+            resultsContainer.innerHTML = `<div style="padding: 20px; text-align:center; color: var(--text-secondary);">No results found for "${query}"</div>`;
+            return;
+        }
+
+        resultsContainer.innerHTML = allResults.map((res, idx) => `
+            <div class="search-item ${idx === 0 ? 'selected' : ''}" data-idx="${idx}">
+                <i data-lucide="${res.icon}"></i>
+                <div class="search-item-info">
+                    <span class="title">${res.title}</span>
+                    <span class="category">${res.cat}</span>
+                </div>
+            </div>
+        `).join('');
+
+        const items = resultsContainer.querySelectorAll('.search-item');
+        items.forEach((item, idx) => {
+            item.onclick = () => {
+                allResults[idx].action();
+                toggleSearchPalette();
+            };
+        });
+
+        if (window.lucide) lucide.createIcons();
+        paletteState.currentResults = allResults;
+        paletteState.selectedIndex = 0;
+    }
+
+    const paletteState = {
+        currentResults: [],
+        selectedIndex: 0
+    };
 
     function closeAllModals() {
         const modals = document.querySelectorAll('.modal-overlay');
@@ -203,11 +402,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         clockOut: '--:--',
                         status: 'On Time'
                     });
+                    addNotification('success', 'Clocked In', `You clocked in at ${timeStr}`);
                 } else {
                     state.isClockedIn = false;
                     const lastRecord = state.attendance[state.attendance.length - 1];
                     if (lastRecord) lastRecord.clockOut = timeStr;
                     state.lastClockInTime = null;
+                    addNotification('info', 'Clocked Out', `You clocked out at ${timeStr}`);
                 }
 
                 localStorage.setItem('hr_isClockedIn', state.isClockedIn);
@@ -337,6 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         name, role, dept, email,
                         joinDate: new Date().toISOString().split('T')[0]
                     });
+                    addNotification('success', 'Employee Added', `${name} has been added to the directory.`);
                 }
 
                 saveToStorage();
@@ -478,6 +680,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (leave) {
             leave.status = status;
             localStorage.setItem('hr_leaves', JSON.stringify(state.leaves));
+            addNotification(
+                status === 'approved' ? 'success' : 'error',
+                `Leave ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+                `Request for ${leave.name} has been ${status}.`
+            );
             renderCurrentView();
         }
     };
@@ -701,10 +908,53 @@ document.addEventListener('DOMContentLoaded', () => {
         // Modal UX: Close on Escape or Overlay Click
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeAllModals();
+
+            // Global Search Trigger (Ctrl+K)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                toggleSearchPalette();
+            }
         });
+
+        // Search Palette Logic
+        const paletteInput = document.getElementById('palette-input');
+        if (paletteInput) {
+            paletteInput.oninput = (e) => renderPaletteResults(e.target.value);
+            paletteInput.onkeydown = (e) => {
+                const results = document.getElementById('palette-results');
+                const items = results.querySelectorAll('.search-item');
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    paletteState.selectedIndex = (paletteState.selectedIndex + 1) % paletteState.currentResults.length;
+                    updatePaletteSelection(items);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    paletteState.selectedIndex = (paletteState.selectedIndex - 1 + paletteState.currentResults.length) % paletteState.currentResults.length;
+                    updatePaletteSelection(items);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (paletteState.currentResults[paletteState.selectedIndex]) {
+                        paletteState.currentResults[paletteState.selectedIndex].action();
+                        toggleSearchPalette();
+                    }
+                }
+            };
+        }
+
+        function updatePaletteSelection(items) {
+            items.forEach(item => item.classList.remove('selected'));
+            if (items[paletteState.selectedIndex]) {
+                items[paletteState.selectedIndex].classList.add('selected');
+                items[paletteState.selectedIndex].scrollIntoView({ block: 'nearest' });
+            }
+        }
 
         window.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal-overlay')) closeAllModals();
+            if (e.target.classList.contains('search-palette')) {
+                document.getElementById('search-palette').style.display = 'none';
+            }
         });
 
         // Theme Toggle
@@ -715,5 +965,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 applyTheme(state.theme);
             });
         }
+
+        // Notification Bell
+        const bell = document.querySelector('.notifications');
+        if (bell) {
+            bell.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleNotifications();
+            });
+        }
+
+        window.addEventListener('click', () => {
+            const dropdown = document.getElementById('notification-dropdown');
+            if (dropdown) dropdown.classList.remove('active');
+        });
     }
 });

@@ -41,12 +41,24 @@
             <header id="top-bar" class="glass">
                 <div class="search-bar">
                     <i data-lucide="search"></i>
-                    <input type="text" placeholder="Search employees, tasks...">
+                    <input type="text" placeholder="Press Ctrl + K to search...">
                 </div>
                 <div class="user-profile">
                     <div class="notifications">
                         <i data-lucide="bell"></i>
                         <span class="badge"></span>
+                        <div class="notification-dropdown" id="notification-dropdown">
+                            <div class="dropdown-header">
+                                <h4>Notifications</h4>
+                                <button onclick="window.markAllRead()">Mark all as read</button>
+                            </div>
+                            <div class="notification-list" id="notification-list">
+                                <!-- Notifications will be injected here -->
+                            </div>
+                            <div class="dropdown-footer">
+                                <a href="#">View all alerts</a>
+                            </div>
+                        </div>
                     </div>
                     <div class="theme-toggle" id="theme-toggle" style="cursor:pointer; color: var(--text-secondary);">
                         <i data-lucide="moon"></i>
@@ -62,6 +74,26 @@
                 <p>Establishing the foundation...</p>
             </section>
         </main>
+    </div>
+
+    <!-- Search Palette / Command Center -->
+    <div class="modal-overlay search-palette" id="search-palette">
+        <div class="search-modal glass">
+            <div class="search-input-wrapper">
+                <i data-lucide="search"></i>
+                <input type="text" id="palette-input" placeholder="Search features or employees (Ctrl + K)..."
+                    autocomplete="off">
+                <kbd>/</kbd>
+            </div>
+            <div class="search-results" id="palette-results">
+                <!-- Results injected here -->
+            </div>
+            <div class="search-footer">
+                <span><kbd>↑↓</kbd> Navigate</span>
+                <span><kbd>Enter</kbd> Select</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->
