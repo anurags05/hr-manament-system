@@ -5,9 +5,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Initial Mock Data
     const initialEmployees = [
-        { id: 1, name: 'Alice Johnson', role: 'UX Designer', dept: 'Design', email: 'alice@example.com', joinDate: '2023-05-12' },
-        { id: 2, name: 'Bob Smith', role: 'Frontend Developer', dept: 'Engineering', email: 'bob@example.com', joinDate: '2023-08-20' },
-        { id: 3, name: 'Charlie Davis', role: 'Project Manager', dept: 'Operations', email: 'charlie@example.com', joinDate: '2024-01-10' }
+        { id: 1, name: 'Alice Johnson', role: 'UX Designer', dept: 'Design', email: 'alice@example.com', joinDate: '2023-05-12', status: 'Active' },
+        { id: 2, name: 'Bob Smith', role: 'Frontend Developer', dept: 'Engineering', email: 'bob@example.com', joinDate: '2023-08-20', status: 'Active' },
+        { id: 3, name: 'Charlie Davis', role: 'Project Manager', dept: 'Operations', email: 'charlie@example.com', joinDate: '2024-01-10', status: 'Active' }
     ];
 
     // Core App State
@@ -297,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="stat-icon blue"><i data-lucide="users"></i></div>
                     <div class="stat-info">
                         <h3>Total Employees</h3>
-                        <p>${state.employees.length}</p>
+                        <p>${state.employees.filter(e => (e.status || 'Active') !== 'Terminated' && (e.status || 'Active') !== 'Resigned').length}</p>
                     </div>
                 </div>
                 <div class="stat-card glass">
@@ -469,6 +469,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             <label>Email Address</label>
                             <input type="email" id="new-email" required placeholder="john@example.com">
                         </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="new-status">
+                                <option value="Active">Active</option>
+                                <option value="On Leave">On Leave</option>
+                                <option value="Terminated">Terminated</option>
+                                <option value="Resigned">Resigned</option>
+                            </select>
+                        </div>
                         <div class="modal-footer">
                             <button type="button" class="btn-outline" id="btn-cancel">Cancel</button>
                             <button type="submit" class="btn-primary" style="padding: 10px 20px;" id="btn-save">Save Employee</button>
@@ -486,7 +495,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="emp-card glass">
                 <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${emp.name}" alt="${emp.name}" class="emp-avatar">
                 <div class="emp-info">
-                    <h3>${emp.name}</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <h3>${emp.name}</h3>
+                        <span class="status-badge status-${(emp.status || 'Active').toLowerCase().replace(' ', '-')}">${emp.status || 'Active'}</span>
+                    </div>
                     <p>${emp.role}</p>
                 </div>
                 <div class="emp-meta">
@@ -526,16 +538,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const role = document.getElementById('new-role').value;
                 const dept = document.getElementById('new-dept').value;
                 const email = document.getElementById('new-email').value;
+                const status = document.getElementById('new-status').value;
 
                 if (state.editingId) {
                     const idx = state.employees.findIndex(emp => emp.id === state.editingId);
                     if (idx !== -1) {
-                        state.employees[idx] = { ...state.employees[idx], name, role, dept, email };
+                        state.employees[idx] = { ...state.employees[idx], name, role, dept, email, status };
                     }
                 } else {
                     state.employees.push({
                         id: Date.now(),
-                        name, role, dept, email,
+                        name, role, dept, email, status,
                         joinDate: new Date().toISOString().split('T')[0]
                     });
                     addNotification('success', 'Employee Added', `${name} has been added to the directory.`);
@@ -890,6 +903,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('new-role').value = emp.role;
             document.getElementById('new-dept').value = emp.dept;
             document.getElementById('new-email').value = emp.email;
+            document.getElementById('new-status').value = emp.status || 'Active';
             document.getElementById('add-modal').style.display = 'flex';
             if (window.lucide) lucide.createIcons();
         }
