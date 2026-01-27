@@ -429,6 +429,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         <i data-lucide="search"></i>
                         <input type="text" id="emp-search" placeholder="Search by name or role...">
                     </div>
+                    <div class="filter-group">
+                        <select id="status-filter" class="glass-select">
+                            <option value="All">All Statuses</option>
+                            <option value="Active">Active</option>
+                            <option value="On Leave">On Leave</option>
+                            <option value="Terminated">Terminated</option>
+                            <option value="Resigned">Resigned</option>
+                        </select>
+                    </div>
                     <button class="btn-primary" id="btn-add-employee" style="padding: 10px 20px;">
                         <i data-lucide="plus"></i> Add Employee
                     </button>
@@ -560,17 +569,24 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
 
-        if (searchInput) {
-            searchInput.oninput = (e) => {
-                const term = e.target.value.toLowerCase();
-                const filtered = state.employees.filter(emp =>
-                    emp.name.toLowerCase().includes(term) ||
-                    emp.role.toLowerCase().includes(term)
-                );
-                document.getElementById('employee-list').innerHTML =
-                    filtered.map(emp => renderEmployeeCard(emp)).join('');
-                lucide.createIcons();
+        if (searchInput || document.getElementById('status-filter')) {
+            const filterResults = () => {
+                const term = document.getElementById('emp-search').value.toLowerCase();
+                const statusFilter = document.getElementById('status-filter').value;
+
+                const filtered = state.employees.filter(emp => {
+                    const matchesSearch = emp.name.toLowerCase().includes(term) || emp.role.toLowerCase().includes(term);
+                    const matchesStatus = statusFilter === 'All' || (emp.status || 'Active') === statusFilter;
+                    return matchesSearch && matchesStatus;
+                });
+
+                document.getElementById('employee-list').innerHTML = filtered.map(emp => renderEmployeeCard(emp)).join('');
+                if (window.lucide) lucide.createIcons();
             };
+
+            if (searchInput) searchInput.oninput = filterResults;
+            const statusFilter = document.getElementById('status-filter');
+            if (statusFilter) statusFilter.onchange = filterResults;
         }
     }
 
