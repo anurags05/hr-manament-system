@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function init() {
         applyTheme(state.theme);
+        syncEmployeeStatuses();
         renderCurrentView();
         setupEventListeners();
         updateBadge();
@@ -608,7 +609,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${leave.name}" alt="${leave.name}">
                                 <div>
                                     <h4 style="margin:0">${leave.name}</h4>
-                                    <span style="font-size:0.8rem; color:var(--text-secondary)">${leave.type}</span>
+                                    <div style="display:flex; gap:5px; align-items:center;">
+                                        <span style="font-size:0.8rem; color:var(--text-secondary)">${leave.type}</span>
+                                        ${leave.isHalfDay ? '<span class="status-badge" style="background:rgba(134,239,172,0.1); color:var(--accent-color); font-size:0.65rem; padding: 2px 6px;">Half-Day</span>' : ''}
+                                    </div>
                                 </div>
                             </div>
                             <span class="status-badge status-${leave.status}">${leave.status}</span>
@@ -637,17 +641,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     <form id="leave-form">
                         <div class="form-group">
                             <label>Employee Name</label>
-                            <select id="leave-emp-name" required>
+                            <select id="leave-emp-name" class="glass-select" required>
                                 ${state.employees.map(e => `<option value="${e.name}">${e.name}</option>`).join('')}
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label>Leave Type</label>
-                            <select id="leave-type">
-                                <option value="Annual Leave">Annual Leave</option>
-                                <option value="Sick Leave">Sick Leave</option>
-                                <option value="Personal Leave">Personal Leave</option>
-                            </select>
+                        <div class="form-group" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+                            <div style="flex:1;">
+                                <label>Leave Type</label>
+                                <select id="leave-type" class="glass-select">
+                                    <option value="Casual Leave">Casual Leave</option>
+                                    <option value="Sick Leave">Sick Leave</option>
+                                    <option value="Unpaid Leave">Unpaid Leave</option>
+                                </select>
+                            </div>
+                            <div style="margin-left: 20px; display: flex; align-items: center; gap: 8px; margin-top: 15px;">
+                                <input type="checkbox" id="leave-half-day" style="width:18px; height:18px; cursor:pointer;">
+                                <label style="margin:0; cursor:pointer;" for="leave-half-day">Half-Day</label>
+                            </div>
                         </div>
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                             <div class="form-group">
@@ -687,12 +697,31 @@ document.addEventListener('DOMContentLoaded', () => {
         if (form) {
             form.onsubmit = (e) => {
                 e.preventDefault();
+                const empName = document.getElementById('leave-emp-name').value;
+                const start = document.getElementById('leave-start').value;
+                const end = document.getElementById('leave-end').value;
+                const type = document.getElementById('leave-type').value;
+                const isHalfDay = document.getElementById('leave-half-day').checked;
+
+                // --- Conflict Detection ---
+                const hasConflict = state.leaves.some(l => {
+                    if (l.name !== empName || l.status === 'rejected') return false;
+                    // Check if [start, end] overlaps with [l.start, l.end]
+                    return (start <= l.end && end >= l.start);
+                });
+
+                if (hasConflict) {
+                    addNotification('warning', 'Leave Conflict', `Already has a leave scheduled during this period.`);
+                    return; // Stop submission
+                }
+
                 const newLeave = {
                     id: Date.now(),
-                    name: document.getElementById('leave-emp-name').value,
-                    type: document.getElementById('leave-type').value,
-                    start: document.getElementById('leave-start').value,
-                    end: document.getElementById('leave-end').value,
+                    name: empName,
+                    type: type,
+                    start: start,
+                    end: end,
+                    isHalfDay: isHalfDay,
                     reason: document.getElementById('leave-reason').value,
                     status: 'pending'
                 };
@@ -714,6 +743,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 `Leave ${status.charAt(0).toUpperCase() + status.slice(1)}`,
                 `Request for ${leave.name} has been ${status}.`
             );
+
+            if (status === 'approved') syncEmployeeStatuses();
             renderCurrentView();
         }
     };
@@ -1024,5 +1055,30 @@ document.addEventListener('DOMContentLoaded', () => {
             const dropdown = document.getElementById('notification-dropdown');
             if (dropdown) dropdown.classList.remove('active');
         });
+    }
+
+    function syncEmployeeStatuses() {
+        const today = new Date().toISOString().split('T')[0];
+        let hasChanges = false;
+
+        state.employees.forEach(emp => {
+            // Only sync Active/On Leave employees
+            if (emp.status !== 'Active' && emp.status !== 'On Leave' && emp.status !== undefined) return;
+
+            const activeLeave = state.leaves.find(l =>
+                l.name === emp.name &&
+                l.status === 'approved' &&
+                today >= l.start &&
+                today <= l.end
+            );
+
+            const newStatus = activeLeave ? 'On Leave' : 'Active';
+            if (emp.status !== newStatus) {
+                emp.status = newStatus;
+                hasChanges = true;
+            }
+        });
+
+        if (hasChanges) saveToStorage();
     }
 });
