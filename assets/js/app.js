@@ -19,6 +19,11 @@ document.addEventListener('DOMContentLoaded', () => {
             { id: 2, empId: 2, name: 'Bob Smith', type: 'Sick Leave', start: '2024-01-20', end: '2024-01-22', status: 'approved', reason: 'Flu' }
         ],
         attendance: JSON.parse(localStorage.getItem('hr_attendance')) || [],
+        payroll: JSON.parse(localStorage.getItem('hr_payroll')) || [
+            { empId: 1, basic: 4500, allowance: 800, bonus: 200, tax: 150, insurance: 100 },
+            { empId: 2, basic: 5200, allowance: 900, bonus: 300, tax: 200, insurance: 120 },
+            { empId: 3, basic: 5800, allowance: 1000, bonus: 400, tax: 250, insurance: 150 }
+        ],
         isClockedIn: JSON.parse(localStorage.getItem('hr_isClockedIn')) || false,
         lastClockInTime: localStorage.getItem('hr_lastClockInTime') || null,
         editingId: null,
@@ -59,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveToStorage() {
         localStorage.setItem('hr_employees', JSON.stringify(state.employees));
         localStorage.setItem('hr_notifications', JSON.stringify(state.notifications));
+        localStorage.setItem('hr_payroll', JSON.stringify(state.payroll));
     }
 
     function addNotification(type, title, message) {
@@ -758,6 +764,31 @@ document.addEventListener('DOMContentLoaded', () => {
                      <span style="color:var(--text-secondary); font-size:0.9rem">Current Month: ${new Date().toLocaleString('default', { month: 'long' })}</span>
                 </div>
             </div>
+
+            <!-- Attendance Stats Cards -->
+            <div class="stats-grid" style="margin-bottom: var(--space-lg); display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-md);">
+                ${(() => {
+                const stats = calculateAttendanceStats();
+                return `
+                        <div class="stat-card glass" style="flex-direction:row; align-items:center; gap:20px;">
+                            ${generatePieChart(stats.percentage)}
+                            <div class="stat-info">
+                                <h3>Efficiency</h3>
+                                <p>${stats.percentage}%</p>
+                                <span style="font-size:0.8rem; color:var(--text-secondary)">Attendance Rate</span>
+                            </div>
+                        </div>
+                        <div class="stat-card glass" style="flex-direction:column; align-items:stretch;">
+                            <div style="margin-bottom:10px; display:flex; justify-content:space-between;">
+                                <h3>Late Trends</h3>
+                                <span style="font-size:0.8rem; color:var(--text-secondary)">Last 7 Days</span>
+                            </div>
+                            ${generateBarChart(state.attendance)}
+                        </div>
+                    `;
+            })()}
+            </div>
+
             <div class="content-box glass">
                 <div class="attendance-table-container">
                     <table class="attendance-table">
@@ -789,6 +820,74 @@ document.addEventListener('DOMContentLoaded', () => {
                     </table>
                 </div>
             </div>
+        `;
+    }
+
+    function calculateAttendanceStats() {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        const daysInMonthSoFar = now.getDate(); // Simple logic: days elapsed
+
+        const monthlyLogs = state.attendance.filter(log => {
+            const logDate = new Date(log.date);
+            return logDate.getMonth() === currentMonth && logDate.getFullYear() === currentYear;
+        });
+
+        // Filter unique days present
+        const uniqueDaysPresent = new Set(monthlyLogs.map(l => l.date)).size;
+
+        // Calculate Stats
+        const percentage = Math.round((uniqueDaysPresent / Math.max(daysInMonthSoFar, 1)) * 100);
+        const lateCount = monthlyLogs.filter(l => l.status === 'Late').length;
+        const absentCount = Math.max(0, daysInMonthSoFar - uniqueDaysPresent); // Simplified absence logic
+
+        return { percentage, late: lateCount, absent: absentCount };
+    }
+
+    function generatePieChart(percentage) {
+        const radius = 30;
+        const circumference = 2 * Math.PI * radius;
+        const offset = circumference - (percentage / 100) * circumference;
+        const color = percentage >= 90 ? 'var(--success)' : percentage >= 75 ? 'var(--warning)' : 'var(--danger)';
+
+        return `
+            <svg width="80" height="80" viewBox="0 0 80 80" style="transform: rotate(-90deg);">
+                <circle cx="40" cy="40" r="${radius}" stroke="var(--border-color)" stroke-width="8" fill="none" opacity="0.3"></circle>
+                <circle cx="40" cy="40" r="${radius}" stroke="${color}" stroke-width="8" fill="none" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" stroke-linecap="round"></circle>
+                <text x="40" y="40" text-anchor="middle" dy="5" font-size="14" fill="var(--text-primary)" style="transform: rotate(90deg); transform-origin: center;">${percentage}%</text>
+            </svg>
+        `;
+    }
+
+    function generateBarChart(logs) {
+        // Get last 7 days data
+        const today = new Date();
+        const data = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(today.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            const log = logs.find(l => l.date === dateStr);
+            // 100% height for on-time service, 50% for late, 0 for absent/no-record
+            let height = 0;
+            let color = 'var(--border-color)';
+
+            if (log) {
+                if (log.status === 'On Time') { height = 40; color = 'var(--success)'; }
+                else if (log.status === 'Late') { height = 25; color = 'var(--warning)'; }
+                else { height = 10; color = 'var(--danger)'; } // Absent/Other
+            }
+            data.push({ date: d.getDate(), height, color });
+        }
+
+        return `
+            <svg width="100%" height="60" viewBox="0 0 200 60">
+                ${data.map((d, i) => `
+                    <rect x="${i * 28 + 10}" y="${50 - d.height}" width="16" height="${d.height}" rx="4" fill="${d.color}"></rect>
+                    <text x="${i * 28 + 18}" y="60" text-anchor="middle" font-size="10" fill="var(--text-secondary)">${d.date}</text>
+                `).join('')}
+            </svg>
         `;
     }
 
@@ -826,10 +925,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         </thead>
                         <tbody>
                             ${state.employees.map(emp => {
-            const base = 5000 + (emp.id * 500); // Mock salary
-            const bonus = 200;
-            const deduction = 100;
-            const net = base + bonus - deduction;
+            let pay = state.payroll.find(p => p.empId === emp.id);
+            if (!pay) {
+                // Default structure if missing
+                pay = { basic: 0, allowance: 0, bonus: 0, tax: 0, insurance: 0 };
+            }
+            const totalDeductions = pay.tax + pay.insurance;
+            const net = pay.basic + pay.allowance + pay.bonus - totalDeductions;
+
             return `
                                     <tr>
                                         <td>
@@ -839,9 +942,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                             </div>
                                         </td>
                                         <td>${emp.role}</td>
-                                        <td>$${base.toLocaleString()}</td>
-                                        <td style="color:var(--success)">+$${bonus}</td>
-                                        <td style="color:var(--danger)">-$${deduction}</td>
+                                        <td>$${pay.basic.toLocaleString()}</td>
+                                        <td style="color:var(--success)">+$${(pay.bonus + pay.allowance).toLocaleString()}</td>
+                                        <td style="color:var(--danger)">-$${totalDeductions.toLocaleString()}</td>
                                         <td style="font-weight:600">$${net.toLocaleString()}</td>
                                         <td>
                                             <button class="btn-outline btn-icon" onclick="window.generatePayslip(${emp.id})">
@@ -884,11 +987,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const emp = state.employees.find(e => e.id === id);
         if (!emp) return;
 
-        const base = 5000 + (emp.id * 500);
-        const bonus = 200;
-        const deduction = 100;
-        const net = base + bonus - deduction;
-        const month = "January 2024";
+        let pay = state.payroll.find(p => p.empId === id);
+        if (!pay) pay = { basic: 0, allowance: 0, bonus: 0, tax: 0, insurance: 0 };
+
+        const totalEarnings = pay.basic + pay.allowance + pay.bonus;
+        const totalDeductions = pay.tax + pay.insurance;
+        const net = totalEarnings - totalDeductions;
+        const month = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
 
         const content = `
             <div class="payslip-header">
@@ -905,9 +1010,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="payslip-section">
                     <h4>Payment Summary</h4>
-                    <div class="payslip-row"><span>Base Salary:</span> <span>$${base.toLocaleString()}</span></div>
-                    <div class="payslip-row"><span>Bonuses:</span> <span style="color:var(--success)">+$${bonus}</span></div>
-                    <div class="payslip-row"><span>Deductions:</span> <span style="color:var(--danger)">-$${deduction}</span></div>
+                    <div class="payslip-row"><span>Basic Salary:</span> <span>$${pay.basic.toLocaleString()}</span></div>
+                    <div class="payslip-row"><span>House Rent Allowance:</span> <span>$${pay.allowance.toLocaleString()}</span></div>
+                    <div class="payslip-row"><span>Performance Bonus:</span> <span style="color:var(--success)">+$${pay.bonus.toLocaleString()}</span></div>
+                    <hr style="margin: 10px 0; border: 0; border-top: 1px solid var(--border-color);">
+                    <div class="payslip-row"><span>Tax Deductions:</span> <span style="color:var(--danger)">-$${pay.tax.toLocaleString()}</span></div>
+                    <div class="payslip-row"><span>Health Insurance:</span> <span style="color:var(--danger)">-$${pay.insurance.toLocaleString()}</span></div>
                     <div class="payslip-row total"><span>Net Salary:</span> <span>$${net.toLocaleString()}</span></div>
                 </div>
             </div>
