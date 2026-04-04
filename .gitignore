@@ -3,6 +3,7 @@
 *.txt
 *.env
 *.pdf
+database.db
 
 #python cache
 __pycache__

@@ -510,15 +510,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             status: 'On Time'
                         }));
 
+                        addNotification('success', 'Clocked In', `You clocked in at ${state.lastClockInTime}`);
+
                         const clockStatus = document.getElementById('clock-status');
                         if (clockStatus) clockStatus.textContent = `Clocked in at ${state.lastClockInTime}`;
-
                         const icon = clockBtn.querySelector('[data-lucide]');
                         const label = clockBtn.querySelector('span');
                         if (icon) { icon.setAttribute('data-lucide', 'log-out'); lucide.createIcons(); }
                         if (label) label.textContent = 'Clock Out';
-
-                        addNotification('success', 'Clocked In', `You clocked in at ${state.lastClockInTime}`);
                     } catch (error) {
                         console.error('Failed to clock in:', error);
                     }
@@ -542,15 +541,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             status: 'On Time'
                         }));
 
+                        addNotification('info', 'Clocked Out', `You clocked out at ${timeStr}`);
+
                         const clockStatus = document.getElementById('clock-status');
                         if (clockStatus) clockStatus.textContent = 'Not clocked in yet';
-
                         const icon = clockBtn.querySelector('[data-lucide]');
                         const label = clockBtn.querySelector('span');
                         if (icon) { icon.setAttribute('data-lucide', 'log-in'); lucide.createIcons(); }
                         if (label) label.textContent = 'Clock In';
-
-                        addNotification('info', 'Clocked Out', `You clocked out at ${timeStr}`);
                     } catch (error) {
                         console.error('Failed to clock out:', error);
                     }
@@ -703,10 +701,30 @@ document.addEventListener('DOMContentLoaded', () => {
                                 status
                             })
                         });
+
+                        // Update state
+                        const empIndex = state.employees.findIndex(e => e.id === state.editingId);
+                        if (empIndex !== -1) {
+                            state.employees[empIndex] = {
+                                ...state.employees[empIndex],
+                                name, role, dept, email, status
+                            };
+                        }
+
                         addNotification('success', 'Employee Updated', `${name} has been updated.`);
+
+                        // Update specific card in DOM
+                        const cards = document.querySelectorAll('.emp-card');
+                        for (const card of cards) {
+                            const editBtn = card.querySelector(`[onclick*="${state.editingId}"]`);
+                            if (editBtn) {
+                                card.outerHTML = renderEmployeeCard(state.employees[empIndex]);
+                                break;
+                            }
+                        }
                     } else {
                         // Add new employee
-                        await apiCall(`${API_BASE_URL}/employees`, {
+                        const response = await apiCall(`${API_BASE_URL}/employees`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -717,28 +735,27 @@ document.addEventListener('DOMContentLoaded', () => {
                                 status
                             })
                         });
-                        addNotification('success', 'Employee Added', `${name} has been added to the directory.`);
-                    }
 
-                    // Reload employee data from API
-                    const employees = await apiCall(`${API_BASE_URL}/employees`);
-                    state.employees = employees.map(emp => ({
-                        id: emp.id,
-                        name: emp.name,
-                        role: emp.role,
-                        dept: emp.department,
-                        email: emp.contact,
-                        joinDate: emp.date_joined,
-                        status: emp.status
-                    }));
+                        // Add to state
+                        const newEmp = {
+                            id: response.id,
+                            name, role, dept, email,
+                            joinDate: response.date_joined || new Date().toISOString().split('T')[0],
+                            status
+                        };
+                        state.employees.push(newEmp);
+
+                        addNotification('success', 'Employee Added', `${name} has been added to the directory.`);
+
+                        // Insert only the new card
+                        const grid = document.getElementById('employee-list');
+                        if (grid) {
+                            grid.insertAdjacentHTML('beforeend', renderEmployeeCard(newEmp));
+                        }
+                    }
 
                     modal.style.display = 'none';
-
-                    const grid = document.getElementById('employee-list');
-                    if (grid) {
-                        grid.innerHTML = state.employees.map(emp => renderEmployeeCard(emp)).join('');
-                        if (window.lucide) lucide.createIcons();
-                    }
+                    if (window.lucide) lucide.createIcons();
                 } catch (error) {
                     console.error('Failed to save employee:', error);
                 }
@@ -902,7 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 try {
-                    await apiCall(`${API_BASE_URL}/leaves`, {
+                    const response = await apiCall(`${API_BASE_URL}/leaves`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -914,26 +931,30 @@ document.addEventListener('DOMContentLoaded', () => {
                         })
                     });
 
-                    // Reload leaves from API
-                    const leaves = await apiCall(`${API_BASE_URL}/leaves`);
-                    state.leaves = leaves.map(leave => ({
-                        id: leave.id,
-                        empId: leave.employee_id,
-                        name: leave.employee_name || 'Unknown',
-                        type: leave.leave_type,
-                        start: leave.start_date,
-                        end: leave.end_date,
-                        reason: leave.reason,
-                        status: leave.status
-                    }));
+                    // Add to state
+                    const newLeave = {
+                        id: response.id,
+                        empId: response.employee_id,
+                        name: response.employee_name || employee.name,
+                        type: response.leave_type,
+                        start: response.start_date,
+                        end: response.end_date,
+                        reason: response.reason,
+                        status: response.status,
+                        isHalfDay
+                    };
+                    state.leaves.push(newLeave);
 
                     addNotification('success', 'Leave Requested', 'Your leave request has been submitted.');
                     modal.style.display = 'none';
 
+                    // Insert only the new leave card
                     const grid = document.querySelector('.leave-grid');
                     if (grid) {
-                        grid.innerHTML = state.leaves.slice().reverse().map(leave => renderLeaveCard(leave)).join('');
-                        if (window.lucide) lucide.createIcons();
+                        // Check if grid has the "no records" placeholder
+                        const placeholder = grid.querySelector('[style*="text-align:center"]');
+                        if (placeholder) placeholder.remove();
+                        grid.insertAdjacentHTML('beforeend', renderLeaveCard(newLeave));
                     }
                 } catch (error) {
                     console.error('Failed to request leave:', error);
@@ -950,17 +971,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ status })
             });
 
-            const leaves = await apiCall(`${API_BASE_URL}/leaves`);
-            state.leaves = leaves.map(leave => ({
-                id: leave.id,
-                empId: leave.employee_id,
-                name: leave.employee_name || 'Unknown',
-                type: leave.leave_type,
-                start: leave.start_date,
-                end: leave.end_date,
-                reason: leave.reason,
-                status: leave.status
-            }));
+            // Update state
+            const leaveIndex = state.leaves.findIndex(l => l.id === id);
+            if (leaveIndex !== -1) {
+                state.leaves[leaveIndex].status = status;
+            }
 
             addNotification(
                 status === 'Approved' ? 'success' : 'error',
@@ -970,6 +985,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (status === 'Approved') syncEmployeeStatuses();
 
+            // Update specific leave card in DOM
             const leaveCard = document.querySelector(`.leave-card[data-leave-id="${id}"]`);
             if (leaveCard) {
                 const badge = leaveCard.querySelector('.status-badge');
@@ -979,14 +995,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 const actionsDiv = leaveCard.querySelector('.leave-actions');
                 if (actionsDiv) actionsDiv.remove();
-            }
-
-            const grid = document.querySelector('.leave-grid');
-            if (grid) {
-                const cards = grid.querySelectorAll('.leave-card');
-                if (cards.length === 0) {
-                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-secondary)">No leave requests found.</div>';
-                }
             }
         } catch (error) {
             console.error('Failed to update leave status:', error);
@@ -1287,23 +1295,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'DELETE'
             });
 
-            const employees = await apiCall(`${API_BASE_URL}/employees`);
-            state.employees = employees.map(emp => ({
-                id: emp.id,
-                name: emp.name,
-                role: emp.role,
-                dept: emp.department,
-                email: emp.contact,
-                joinDate: emp.date_joined,
-                status: emp.status
-            }));
+            // Remove from state
+            state.employees = state.employees.filter(emp => emp.id !== id);
 
             addNotification('success', 'Employee Deleted', 'Employee has been removed from the directory.');
 
-            const grid = document.getElementById('employee-list');
-            if (grid) {
-                grid.innerHTML = state.employees.map(emp => renderEmployeeCard(emp)).join('');
-                if (window.lucide) lucide.createIcons();
+            // Remove specific card from DOM
+            const cards = document.querySelectorAll('.emp-card');
+            for (const card of cards) {
+                const deleteBtn = card.querySelector(`[onclick*="${id}"]`);
+                if (deleteBtn) {
+                    card.remove();
+                    break;
+                }
             }
         } catch (error) {
             console.error('Failed to delete employee:', error);
@@ -1330,7 +1334,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Sidebar Navigation
         const navLinks = document.querySelectorAll('#sidebar nav ul li');
         navLinks.forEach(link => {
-            link.addEventListener('click', () => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
                 const page = link.innerText.trim().toLowerCase();
                 window.navTo(page);
             });
