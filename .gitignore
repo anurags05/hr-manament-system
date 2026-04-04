@@ -1,3 +1,6 @@
 *.drawio
 *.md
 *.txt
+*.env   
+*.jpg
+*.bkp
