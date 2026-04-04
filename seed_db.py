@@ -15,6 +15,12 @@ def seed_database():
     cursor.execute('DELETE FROM attendance')
     cursor.execute('DELETE FROM payroll')
 
+    # Reset autoincrement counters so IDs start from 1
+    cursor.execute('DELETE FROM sqlite_sequence WHERE name="employees"')
+    cursor.execute('DELETE FROM sqlite_sequence WHERE name="leaves"')
+    cursor.execute('DELETE FROM sqlite_sequence WHERE name="attendance"')
+    cursor.execute('DELETE FROM sqlite_sequence WHERE name="payroll"')
+
     employees = []
 
     # Define roles and departments as paired mappings

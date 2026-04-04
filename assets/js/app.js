@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
         lastClockInTime: localStorage.getItem('hr_lastClockInTime') || null,
         editingId: null,
         currentUser: {
+            id: 1,
             name: 'Admin User',
             role: 'Administrator'
         },
@@ -102,6 +103,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 clockOut: att.clock_out_time ? new Date(att.clock_out_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--',
                 status: 'On Time'
             }));
+
+            // Check if current user has an active clock-in today
+            const today = new Date().toISOString().split('T')[0];
+            const todayRecord = attendance.find(att =>
+                att.employee_id === state.currentUser.id &&
+                att.date === today &&
+                !att.clock_out_time
+            );
+            if (todayRecord) {
+                state.isClockedIn = true;
+                state.lastClockInTime = new Date(todayRecord.clock_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } else {
+                state.isClockedIn = false;
+                state.lastClockInTime = null;
+            }
 
             // Load payroll
             const payroll = await apiCall(`${API_BASE_URL}/payroll`);
@@ -470,34 +486,75 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupDashboardListeners() {
         const clockBtn = document.getElementById('btn-toggle-clock');
         if (clockBtn) {
-            clockBtn.onclick = () => {
+            clockBtn.onclick = async () => {
                 const now = new Date();
                 const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const dateStr = now.toISOString().split('T')[0];
 
                 if (!state.isClockedIn) {
-                    state.isClockedIn = true;
-                    state.lastClockInTime = timeStr;
-                    state.attendance.push({
-                        id: Date.now(),
-                        date: dateStr,
-                        clockIn: timeStr,
-                        clockOut: '--:--',
-                        status: 'On Time'
-                    });
-                    addNotification('success', 'Clocked In', `You clocked in at ${timeStr}`);
-                } else {
-                    state.isClockedIn = false;
-                    const lastRecord = state.attendance[state.attendance.length - 1];
-                    if (lastRecord) lastRecord.clockOut = timeStr;
-                    state.lastClockInTime = null;
-                    addNotification('info', 'Clocked Out', `You clocked out at ${timeStr}`);
-                }
+                    try {
+                        const response = await apiCall(`${API_BASE_URL}/attendance/clock-in`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ employee_id: state.currentUser.id })
+                        });
 
-                localStorage.setItem('hr_isClockedIn', state.isClockedIn);
-                localStorage.setItem('hr_lastClockInTime', state.lastClockInTime);
-                localStorage.setItem('hr_attendance', JSON.stringify(state.attendance));
-                renderCurrentView();
+                        state.isClockedIn = true;
+                        state.lastClockInTime = new Date(response.clock_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                        const attendance = await apiCall(`${API_BASE_URL}/attendance`);
+                        state.attendance = attendance.map(att => ({
+                            id: att.id,
+                            date: att.date,
+                            clockIn: att.clock_in_time ? new Date(att.clock_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--',
+                            clockOut: att.clock_out_time ? new Date(att.clock_out_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--',
+                            status: 'On Time'
+                        }));
+
+                        const clockStatus = document.getElementById('clock-status');
+                        if (clockStatus) clockStatus.textContent = `Clocked in at ${state.lastClockInTime}`;
+
+                        const icon = clockBtn.querySelector('[data-lucide]');
+                        const label = clockBtn.querySelector('span');
+                        if (icon) { icon.setAttribute('data-lucide', 'log-out'); lucide.createIcons(); }
+                        if (label) label.textContent = 'Clock Out';
+
+                        addNotification('success', 'Clocked In', `You clocked in at ${state.lastClockInTime}`);
+                    } catch (error) {
+                        console.error('Failed to clock in:', error);
+                    }
+                } else {
+                    try {
+                        const response = await apiCall(`${API_BASE_URL}/attendance/clock-out`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ employee_id: state.currentUser.id })
+                        });
+
+                        state.isClockedIn = false;
+                        state.lastClockInTime = null;
+
+                        const attendance = await apiCall(`${API_BASE_URL}/attendance`);
+                        state.attendance = attendance.map(att => ({
+                            id: att.id,
+                            date: att.date,
+                            clockIn: att.clock_in_time ? new Date(att.clock_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--',
+                            clockOut: att.clock_out_time ? new Date(att.clock_out_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--',
+                            status: 'On Time'
+                        }));
+
+                        const clockStatus = document.getElementById('clock-status');
+                        if (clockStatus) clockStatus.textContent = 'Not clocked in yet';
+
+                        const icon = clockBtn.querySelector('[data-lucide]');
+                        const label = clockBtn.querySelector('span');
+                        if (icon) { icon.setAttribute('data-lucide', 'log-in'); lucide.createIcons(); }
+                        if (label) label.textContent = 'Clock In';
+
+                        addNotification('info', 'Clocked Out', `You clocked out at ${timeStr}`);
+                    } catch (error) {
+                        console.error('Failed to clock out:', error);
+                    }
+                }
             };
         }
     }
@@ -676,7 +733,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }));
 
                     modal.style.display = 'none';
-                    renderCurrentView();
+
+                    const grid = document.getElementById('employee-list');
+                    if (grid) {
+                        grid.innerHTML = state.employees.map(emp => renderEmployeeCard(emp)).join('');
+                        if (window.lucide) lucide.createIcons();
+                    }
                 } catch (error) {
                     console.error('Failed to save employee:', error);
                 }
@@ -705,6 +767,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Leave Management View ---
+    function renderLeaveCard(leave) {
+        return `
+            <div class="leave-card glass" data-leave-id="${leave.id}">
+                <div class="leave-header">
+                    <div class="leave-requester">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${leave.name}" alt="${leave.name}">
+                        <div>
+                            <h4 style="margin:0">${leave.name}</h4>
+                            <div style="display:flex; gap:5px; align-items:center;">
+                                <span style="font-size:0.8rem; color:var(--text-secondary)">${leave.type}</span>
+                                ${leave.isHalfDay ? '<span class="status-badge" style="background:rgba(134,239,172,0.1); color:var(--accent-color); font-size:0.65rem; padding: 2px 6px;">Half-Day</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <span class="status-badge status-${leave.status}">${leave.status}</span>
+                </div>
+                <div class="leave-details">
+                    <p><i data-lucide="calendar" style="width:14px;"></i> ${leave.start} to ${leave.end}</p>
+                    <p><i data-lucide="info" style="width:14px;"></i> ${leave.reason}</p>
+                </div>
+                ${leave.status === 'Pending' ? `
+                    <div class="leave-actions">
+                        <button class="btn-icon btn-primary" onclick="window.updateLeaveStatus(${leave.id}, 'Approved')">Approve</button>
+                        <button class="btn-icon btn-danger-outline" onclick="window.updateLeaveStatus(${leave.id}, 'Rejected')">Reject</button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
     function renderLeaves(container) {
         container.innerHTML = `
             <div class="directory-header">
@@ -715,33 +807,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="leave-grid">
                 ${state.leaves.length === 0 ? '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-secondary)">No leave requests found.</div>' : ''}
-                ${state.leaves.slice().reverse().map(leave => `
-                    <div class="leave-card glass">
-                        <div class="leave-header">
-                            <div class="leave-requester">
-                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${leave.name}" alt="${leave.name}">
-                                <div>
-                                    <h4 style="margin:0">${leave.name}</h4>
-                                    <div style="display:flex; gap:5px; align-items:center;">
-                                        <span style="font-size:0.8rem; color:var(--text-secondary)">${leave.type}</span>
-                                        ${leave.isHalfDay ? '<span class="status-badge" style="background:rgba(134,239,172,0.1); color:var(--accent-color); font-size:0.65rem; padding: 2px 6px;">Half-Day</span>' : ''}
-                                    </div>
-                                </div>
-                            </div>
-                            <span class="status-badge status-${leave.status}">${leave.status}</span>
-                        </div>
-                        <div class="leave-details">
-                            <p><i data-lucide="calendar" style="width:14px;"></i> ${leave.start} to ${leave.end}</p>
-                            <p><i data-lucide="info" style="width:14px;"></i> ${leave.reason}</p>
-                        </div>
-                        ${leave.status === 'Pending' ? `
-                            <div class="leave-actions">
-                                <button class="btn-icon btn-primary" onclick="window.updateLeaveStatus(${leave.id}, 'Approved')">Approve</button>
-                                <button class="btn-icon btn-danger-outline" onclick="window.updateLeaveStatus(${leave.id}, 'Rejected')">Reject</button>
-                            </div>
-                        ` : ''}
-                    </div>
-                `).join('')}
+                ${state.leaves.slice().reverse().map(leave => renderLeaveCard(leave)).join('')}
             </div>
 
             <!-- Leave Request Modal -->
@@ -863,7 +929,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     addNotification('success', 'Leave Requested', 'Your leave request has been submitted.');
                     modal.style.display = 'none';
-                    renderCurrentView();
+
+                    const grid = document.querySelector('.leave-grid');
+                    if (grid) {
+                        grid.innerHTML = state.leaves.slice().reverse().map(leave => renderLeaveCard(leave)).join('');
+                        if (window.lucide) lucide.createIcons();
+                    }
                 } catch (error) {
                     console.error('Failed to request leave:', error);
                 }
@@ -879,7 +950,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ status })
             });
 
-            // Reload leaves from API
             const leaves = await apiCall(`${API_BASE_URL}/leaves`);
             state.leaves = leaves.map(leave => ({
                 id: leave.id,
@@ -899,7 +969,25 @@ document.addEventListener('DOMContentLoaded', () => {
             );
 
             if (status === 'Approved') syncEmployeeStatuses();
-            renderCurrentView();
+
+            const leaveCard = document.querySelector(`.leave-card[data-leave-id="${id}"]`);
+            if (leaveCard) {
+                const badge = leaveCard.querySelector('.status-badge');
+                if (badge) {
+                    badge.textContent = status;
+                    badge.className = `status-badge status-${status.toLowerCase()}`;
+                }
+                const actionsDiv = leaveCard.querySelector('.leave-actions');
+                if (actionsDiv) actionsDiv.remove();
+            }
+
+            const grid = document.querySelector('.leave-grid');
+            if (grid) {
+                const cards = grid.querySelectorAll('.leave-card');
+                if (cards.length === 0) {
+                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-secondary)">No leave requests found.</div>';
+                }
+            }
         } catch (error) {
             console.error('Failed to update leave status:', error);
         }
@@ -1199,7 +1287,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'DELETE'
             });
 
-            // Reload employees from API
             const employees = await apiCall(`${API_BASE_URL}/employees`);
             state.employees = employees.map(emp => ({
                 id: emp.id,
@@ -1212,7 +1299,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }));
 
             addNotification('success', 'Employee Deleted', 'Employee has been removed from the directory.');
-            renderCurrentView();
+
+            const grid = document.getElementById('employee-list');
+            if (grid) {
+                grid.innerHTML = state.employees.map(emp => renderEmployeeCard(emp)).join('');
+                if (window.lucide) lucide.createIcons();
+            }
         } catch (error) {
             console.error('Failed to delete employee:', error);
         }
