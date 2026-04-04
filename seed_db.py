@@ -16,14 +16,25 @@ def seed_database():
     cursor.execute('DELETE FROM payroll')
 
     employees = []
-    
+
+    # Define roles and departments as paired mappings
+    role_department_pairs = [
+        ('Controller', 'Finance'),
+        ('Accountant', 'Finance'),
+        ('Account Manager', 'Sales & Marketing'),
+        ('Contract Manager', 'Sales & Marketing'),
+        ('Designer', 'IT/Engg'),
+        ('Developer', 'IT/Engg'),
+        ('HR Manager', 'HR'),
+        ('Recruiter', 'HR'),
+    ]
+
     # Create 10 dummy employees
-    for _ in range(10):
+    for _ in range(50):
         name = fake.name()
-        role = random.choice(['Developer', 'Manager', 'Analyst', 'HR', 'Designer'])
-        department = random.choice(['IT', 'Sales', 'HR', 'Marketing', 'Finance'])
+        role, department = random.choice(role_department_pairs)
         contact = fake.phone_number()
-        date_joined = fake.date_between(start_date='-2y', end_date='today')
+        date_joined = fake.date_between(start_date='-5y', end_date='today')
         status = 'Active'
 
         cursor.execute('''
