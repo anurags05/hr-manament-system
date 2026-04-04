@@ -2,6 +2,9 @@
  * HR Pro - Main Application Logic
  */
 
+// API Configuration
+const API_BASE_URL = 'http://127.0.0.1:5000/api';
+
 document.addEventListener('DOMContentLoaded', () => {
     // Initial Mock Data
     const initialEmployees = [
@@ -38,12 +41,85 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize UI
     init();
 
-    function init() {
+    async function init() {
         applyTheme(state.theme);
+        await loadDataFromAPI();
         syncEmployeeStatuses();
         renderCurrentView();
         setupEventListeners();
         updateBadge();
+    }
+
+    // API Utility Functions
+    async function apiCall(url, options = {}) {
+        try {
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('API Error:', error);
+            addNotification('error', 'API Error', error.message);
+            throw error;
+        }
+    }
+
+    async function loadDataFromAPI() {
+        try {
+            // Load employees
+            const employees = await apiCall(`${API_BASE_URL}/employees`);
+            state.employees = employees.map(emp => ({
+                id: emp.id,
+                name: emp.name,
+                role: emp.role,
+                dept: emp.department,  // Map department to dept
+                email: emp.contact,     // Map contact to email
+                joinDate: emp.date_joined,
+                status: emp.status
+            }));
+
+            // Load leaves
+            const leaves = await apiCall(`${API_BASE_URL}/leaves`);
+            state.leaves = leaves.map(leave => ({
+                id: leave.id,
+                empId: leave.employee_id,
+                name: leave.employee_name || 'Unknown',
+                type: leave.leave_type,
+                start: leave.start_date,
+                end: leave.end_date,
+                reason: leave.reason,
+                status: leave.status
+            }));
+
+            // Load attendance
+            const attendance = await apiCall(`${API_BASE_URL}/attendance`);
+            state.attendance = attendance.map(att => ({
+                id: att.id,
+                date: att.date,
+                clockIn: att.clock_in_time ? new Date(att.clock_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--',
+                clockOut: att.clock_out_time ? new Date(att.clock_out_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--',
+                status: 'On Time'
+            }));
+
+            // Load payroll
+            const payroll = await apiCall(`${API_BASE_URL}/payroll`);
+            state.payroll = payroll.map(pay => ({
+                empId: pay.employee_id,
+                basic: pay.basic_salary,
+                bonus: pay.bonus,
+                allowance: 0, // Not in DB schema
+                tax: 0,       // Not in DB schema
+                insurance: 0, // Not in DB schema
+                deductions: pay.deductions
+            }));
+
+            console.log('Data loaded from API successfully');
+        } catch (error) {
+            console.error('Failed to load data from API. Using fallback data:', error);
+            // Keep initial mock data on error
+        }
     }
 
     function applyTheme(theme) {
@@ -548,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cancelBtn) cancelBtn.onclick = () => closeAllModals();
 
         if (form) {
-            form.onsubmit = (e) => {
+            form.onsubmit = async (e) => {
                 e.preventDefault();
                 const name = document.getElementById('new-name').value;
                 const role = document.getElementById('new-role').value;
@@ -556,23 +632,54 @@ document.addEventListener('DOMContentLoaded', () => {
                 const email = document.getElementById('new-email').value;
                 const status = document.getElementById('new-status').value;
 
-                if (state.editingId) {
-                    const idx = state.employees.findIndex(emp => emp.id === state.editingId);
-                    if (idx !== -1) {
-                        state.employees[idx] = { ...state.employees[idx], name, role, dept, email, status };
+                try {
+                    if (state.editingId) {
+                        // Update existing employee
+                        await apiCall(`${API_BASE_URL}/employees/${state.editingId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                name,
+                                role,
+                                department: dept,
+                                contact: email,
+                                status
+                            })
+                        });
+                        addNotification('success', 'Employee Updated', `${name} has been updated.`);
+                    } else {
+                        // Add new employee
+                        await apiCall(`${API_BASE_URL}/employees`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                name,
+                                role,
+                                department: dept,
+                                contact: email,
+                                status
+                            })
+                        });
+                        addNotification('success', 'Employee Added', `${name} has been added to the directory.`);
                     }
-                } else {
-                    state.employees.push({
-                        id: Date.now(),
-                        name, role, dept, email, status,
-                        joinDate: new Date().toISOString().split('T')[0]
-                    });
-                    addNotification('success', 'Employee Added', `${name} has been added to the directory.`);
-                }
 
-                saveToStorage();
-                modal.style.display = 'none';
-                renderCurrentView();
+                    // Reload employee data from API
+                    const employees = await apiCall(`${API_BASE_URL}/employees`);
+                    state.employees = employees.map(emp => ({
+                        id: emp.id,
+                        name: emp.name,
+                        role: emp.role,
+                        dept: emp.department,
+                        email: emp.contact,
+                        joinDate: emp.date_joined,
+                        status: emp.status
+                    }));
+
+                    modal.style.display = 'none';
+                    renderCurrentView();
+                } catch (error) {
+                    console.error('Failed to save employee:', error);
+                }
             };
         }
 
@@ -627,10 +734,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             <p><i data-lucide="calendar" style="width:14px;"></i> ${leave.start} to ${leave.end}</p>
                             <p><i data-lucide="info" style="width:14px;"></i> ${leave.reason}</p>
                         </div>
-                        ${leave.status === 'pending' ? `
+                        ${leave.status === 'Pending' ? `
                             <div class="leave-actions">
-                                <button class="btn-icon btn-primary" onclick="window.updateLeaveStatus(${leave.id}, 'approved')">Approve</button>
-                                <button class="btn-icon btn-danger-outline" onclick="window.updateLeaveStatus(${leave.id}, 'rejected')">Reject</button>
+                                <button class="btn-icon btn-primary" onclick="window.updateLeaveStatus(${leave.id}, 'Approved')">Approve</button>
+                                <button class="btn-icon btn-danger-outline" onclick="window.updateLeaveStatus(${leave.id}, 'Rejected')">Reject</button>
                             </div>
                         ` : ''}
                     </div>
@@ -701,7 +808,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('btn-cancel-leave').onclick = () => closeAllModals();
 
         if (form) {
-            form.onsubmit = (e) => {
+            form.onsubmit = async (e) => {
                 e.preventDefault();
                 const empName = document.getElementById('leave-emp-name').value;
                 const start = document.getElementById('leave-start').value;
@@ -709,9 +816,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const type = document.getElementById('leave-type').value;
                 const isHalfDay = document.getElementById('leave-half-day').checked;
 
+                // Find employee ID from name
+                const employee = state.employees.find(emp => emp.name === empName);
+                if (!employee) {
+                    addNotification('error', 'Invalid Employee', 'Employee not found.');
+                    return;
+                }
+
                 // --- Conflict Detection ---
                 const hasConflict = state.leaves.some(l => {
-                    if (l.name !== empName || l.status === 'rejected') return false;
+                    if (l.empId !== employee.id || l.status === 'Rejected') return false;
                     // Check if [start, end] overlaps with [l.start, l.end]
                     return (start <= l.end && end >= l.start);
                 });
@@ -721,37 +835,73 @@ document.addEventListener('DOMContentLoaded', () => {
                     return; // Stop submission
                 }
 
-                const newLeave = {
-                    id: Date.now(),
-                    name: empName,
-                    type: type,
-                    start: start,
-                    end: end,
-                    isHalfDay: isHalfDay,
-                    reason: document.getElementById('leave-reason').value,
-                    status: 'pending'
-                };
-                state.leaves.push(newLeave);
-                localStorage.setItem('hr_leaves', JSON.stringify(state.leaves));
-                modal.style.display = 'none';
-                renderCurrentView();
+                try {
+                    await apiCall(`${API_BASE_URL}/leaves`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            employee_id: employee.id,
+                            leave_type: type,
+                            start_date: start,
+                            end_date: end,
+                            reason: document.getElementById('leave-reason').value
+                        })
+                    });
+
+                    // Reload leaves from API
+                    const leaves = await apiCall(`${API_BASE_URL}/leaves`);
+                    state.leaves = leaves.map(leave => ({
+                        id: leave.id,
+                        empId: leave.employee_id,
+                        name: leave.employee_name || 'Unknown',
+                        type: leave.leave_type,
+                        start: leave.start_date,
+                        end: leave.end_date,
+                        reason: leave.reason,
+                        status: leave.status
+                    }));
+
+                    addNotification('success', 'Leave Requested', 'Your leave request has been submitted.');
+                    modal.style.display = 'none';
+                    renderCurrentView();
+                } catch (error) {
+                    console.error('Failed to request leave:', error);
+                }
             };
         }
     }
 
-    window.updateLeaveStatus = (id, status) => {
-        const leave = state.leaves.find(l => l.id === id);
-        if (leave) {
-            leave.status = status;
-            localStorage.setItem('hr_leaves', JSON.stringify(state.leaves));
+    window.updateLeaveStatus = async (id, status) => {
+        try {
+            await apiCall(`${API_BASE_URL}/leaves/${id}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+
+            // Reload leaves from API
+            const leaves = await apiCall(`${API_BASE_URL}/leaves`);
+            state.leaves = leaves.map(leave => ({
+                id: leave.id,
+                empId: leave.employee_id,
+                name: leave.employee_name || 'Unknown',
+                type: leave.leave_type,
+                start: leave.start_date,
+                end: leave.end_date,
+                reason: leave.reason,
+                status: leave.status
+            }));
+
             addNotification(
-                status === 'approved' ? 'success' : 'error',
-                `Leave ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-                `Request for ${leave.name} has been ${status}.`
+                status === 'Approved' ? 'success' : 'error',
+                `Leave ${status}`,
+                `Leave request has been ${status.toLowerCase()}.`
             );
 
-            if (status === 'approved') syncEmployeeStatuses();
+            if (status === 'Approved') syncEmployeeStatuses();
             renderCurrentView();
+        } catch (error) {
+            console.error('Failed to update leave status:', error);
         }
     };
 
@@ -1041,27 +1191,47 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCurrentView();
     };
 
-    window.deleteEmployee = (id) => {
-        if (confirm('Are you sure you want to delete this employee?')) {
-            state.employees = state.employees.filter(emp => emp.id !== id);
-            saveToStorage();
+    window.deleteEmployee = async (id) => {
+        if (!confirm('Are you sure you want to delete this employee?')) return;
+
+        try {
+            await apiCall(`${API_BASE_URL}/employees/${id}`, {
+                method: 'DELETE'
+            });
+
+            // Reload employees from API
+            const employees = await apiCall(`${API_BASE_URL}/employees`);
+            state.employees = employees.map(emp => ({
+                id: emp.id,
+                name: emp.name,
+                role: emp.role,
+                dept: emp.department,
+                email: emp.contact,
+                joinDate: emp.date_joined,
+                status: emp.status
+            }));
+
+            addNotification('success', 'Employee Deleted', 'Employee has been removed from the directory.');
             renderCurrentView();
+        } catch (error) {
+            console.error('Failed to delete employee:', error);
         }
     };
 
     window.editEmployee = (id) => {
         const emp = state.employees.find(e => e.id === id);
-        if (emp) {
-            state.editingId = id;
-            document.getElementById('modal-title').innerText = 'Edit Employee';
-            document.getElementById('new-name').value = emp.name;
-            document.getElementById('new-role').value = emp.role;
-            document.getElementById('new-dept').value = emp.dept;
-            document.getElementById('new-email').value = emp.email;
-            document.getElementById('new-status').value = emp.status || 'Active';
-            document.getElementById('add-modal').style.display = 'flex';
-            if (window.lucide) lucide.createIcons();
-        }
+        if (!emp) return;
+
+        state.editingId = id;
+        document.getElementById('modal-title').innerText = 'Edit Employee';
+        document.getElementById('new-name').value = emp.name;
+        document.getElementById('new-role').value = emp.role;
+        document.getElementById('new-dept').value = emp.dept;
+        document.getElementById('new-email').value = emp.email;
+        document.getElementById('new-status').value = emp.status || 'Active';
+
+        document.getElementById('add-modal').style.display = 'flex';
+        if (window.lucide) lucide.createIcons();
     };
 
     function setupEventListeners() {

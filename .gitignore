@@ -1,6 +1,10 @@
 *.drawio
 *.md
 *.txt
-*.env   
-*.jpg
-*.bkp
+*.env
+*.pdf
+
+#python cache
+__pycache__
+#venvs
+__venv__
