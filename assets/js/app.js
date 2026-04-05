@@ -935,6 +935,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const newLeave = {
                         id: response.id,
                         empId: response.employee_id,
+                        
                         name: response.employee_name || employee.name,
                         type: response.leave_type,
                         start: response.start_date,

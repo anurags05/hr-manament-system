@@ -1,5 +1,5 @@
 *.drawio
-*.md
+# *.md
 *.txt
 *.env
 *.pdf
