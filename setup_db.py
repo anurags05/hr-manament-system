@@ -57,6 +57,17 @@ def create_tables():
         )
     ''')
 
+    # Create Users Table (for RBAC authentication)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            emp_id INTEGER NOT NULL UNIQUE,
+            pass_hash TEXT NOT NULL,
+            role TEXT NOT NULL CHECK(role IN ('employee', 'hr', 'gm')),
+            FOREIGN KEY (emp_id) REFERENCES employees (id)
+        )
+    ''')
+
     connection.commit()
     connection.close()
     print("Database initialized and tables created successfully.")

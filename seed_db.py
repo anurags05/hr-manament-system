@@ -1,6 +1,7 @@
 import sqlite3
 from faker import Faker
 import random
+import bcrypt
 from datetime import datetime, timedelta
 
 fake = Faker()
@@ -14,12 +15,14 @@ def seed_database():
     cursor.execute('DELETE FROM leaves')
     cursor.execute('DELETE FROM attendance')
     cursor.execute('DELETE FROM payroll')
+    cursor.execute('DELETE FROM users')
 
     # Reset autoincrement counters so IDs start from 1
     cursor.execute('DELETE FROM sqlite_sequence WHERE name="employees"')
     cursor.execute('DELETE FROM sqlite_sequence WHERE name="leaves"')
     cursor.execute('DELETE FROM sqlite_sequence WHERE name="attendance"')
     cursor.execute('DELETE FROM sqlite_sequence WHERE name="payroll"')
+    cursor.execute('DELETE FROM sqlite_sequence WHERE name="users"')
 
     employees = []
 
@@ -35,8 +38,11 @@ def seed_database():
         ('Recruiter', 'HR'),
     ]
 
-    # Create 10 dummy employees
-    for _ in range(50):
+    hr_roles = ('HR Manager', 'Recruiter')
+    gm_role = 'HR Manager'
+
+    # Create 50 dummy employees
+    for i in range(50):
         name = fake.name()
         role, department = random.choice(role_department_pairs)
         contact = fake.phone_number()
@@ -51,9 +57,31 @@ def seed_database():
 
     print(f"Seeded {len(employees)} employees.")
 
+    # Seed users table with RBAC roles
+    default_password = 'password123'
+    password_hash = bcrypt.hashpw(default_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+    for idx, emp_id in enumerate(employees):
+        cursor.execute('SELECT role FROM employees WHERE id = ?', (emp_id,))
+        job_role = cursor.fetchone()[0]
+
+        if job_role in hr_roles:
+            access_role = 'hr'
+        elif idx == 0:
+            access_role = 'gm'
+        else:
+            access_role = 'employee'
+
+        cursor.execute('''
+            INSERT INTO users (emp_id, pass_hash, role)
+            VALUES (?, ?, ?)
+        ''', (emp_id, password_hash, access_role))
+
+    print(f"Seeded {len(employees)} users with RBAC roles.")
+
     # Seed Leaves
     for emp_id in employees:
-        if random.choice([True, False]): # 50% chance of having leave records
+        if random.choice([True, False]):
             for _ in range(random.randint(1, 3)):
                 leave_type = random.choice(['Sick Leave', 'Casual Leave', 'Annual Leave'])
                 start_date = fake.date_between(start_date='-1y', end_date='today')
@@ -73,10 +101,10 @@ def seed_database():
     for i in range(7):
         date = today - timedelta(days=i)
         for emp_id in employees:
-            if random.random() > 0.1: # 90% attendance rate
+            if random.random() > 0.1:
                 clock_in = datetime.combine(date, datetime.strptime('09:00', '%H:%M').time()) + timedelta(minutes=random.randint(-30, 30))
                 clock_out = datetime.combine(date, datetime.strptime('17:00', '%H:%M').time()) + timedelta(minutes=random.randint(-30, 30))
-                
+
                 cursor.execute('''
                     INSERT INTO attendance (employee_id, date, clock_in_time, clock_out_time)
                     VALUES (?, ?, ?, ?)
@@ -102,6 +130,7 @@ def seed_database():
     connection.commit()
     connection.close()
     print("Database seeded successfully.")
+    print(f"Default password for all users: {default_password}")
 
 if __name__ == '__main__':
     seed_database()

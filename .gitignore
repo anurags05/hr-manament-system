@@ -1,11 +1,21 @@
 *.drawio
-# *.md
+*.md
 *.txt
 *.env
 *.pdf
+
+#Specific Exclusions
 database.db
+plan.md
+
+
+# Strict Inclusions 
+!newtasks.md
+!requirements.txt
+!setup_backend.bat
+
 
 #python cache
-__pycache__
+__pycache__/
 #venvs
-__venv__
+venv/

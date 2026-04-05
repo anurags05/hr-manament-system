@@ -16,7 +16,11 @@
 ### create double pages with backend IDs that correpond to only specific roles (ex: GM/emp ->leaves page that only shows the his own leaves history and request leave button. hr -> leaves page that shows leaves status for all employees and request/create leave button. link this function to the rbac system.
 
 ---
+# [Profile View Changes]
+### when clicking on profile, show role, department
+###
 
+---
 # [Page distribution for different roles]
 
 ### HR General manager -> dashboard + leaves(request) + attendance(own)
@@ -77,3 +81,7 @@
 
 ### logo branding css
 ### dynamic page loading
+### add a clear all button in notifications tab
+### populate db with multiple months of atleast 3 months of attendance, 1 years of payslips, 
+### rescript seed_db.py to repopulate indian numbers with proper syntax
+### debug: user1 doesn't have numb and date in profile dropdown
