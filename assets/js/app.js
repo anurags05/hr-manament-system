@@ -1019,48 +1019,161 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderLeavesHR(container) {
         container.innerHTML = `
+            <div class="tab-bar">
+                <button class="tab-button active" data-tab="management">Manage Leaves</button>
+                <button class="tab-button" data-tab="my-leaves">My Leaves</button>
+            </div>
+
+            <div id="tab-management" class="tab-content">
+                <div class="directory-header">
+                    <h2>Leave Management</h2>
+                    <button class="btn-primary" id="btn-create-leave" style="padding: 10px 20px;">
+                        <i data-lucide="calendar-plus"></i> Create Leave
+                    </button>
+                </div>
+
+                <div class="filter-bar">
+                    <select id="leave-status-filter" class="glass-select">
+                        <option value="all">All Statuses</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                    <select id="leave-month-filter" class="glass-select">
+                        <option value="all">All Months</option>
+                        ${generateMonthOptions()}
+                    </select>
+                    <input type="text" id="leave-name-filter" placeholder="Search by name..." style="padding: 10px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); outline: none; font-family: inherit; font-size: 0.9rem;">
+                </div>
+
+                <div class="leave-grid">
+                    ${state.leaves.length === 0 ? '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-secondary)">No leave requests found.</div>' : ''}
+                    ${state.leaves.slice().reverse().map(leave => renderLeaveCard(leave)).join('')}
+                </div>
+
+                <div class="modal-overlay" id="leave-modal">
+                    <div class="modal-content glass">
+                        <div class="box-header">
+                            <h2>Create Leave</h2>
+                            <button class="btn-close-icon" id="close-leave-modal"><i data-lucide="x"></i></button>
+                        </div>
+                        <form id="leave-form">
+                            <div class="form-group">
+                                <label>Employee</label>
+                                <select id="leave-emp-name" class="glass-select" required>
+                                    ${state.employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Leave Type</label>
+                                <select id="leave-type" class="glass-select">
+                                    <option value="Casual Leave">Casual Leave</option>
+                                    <option value="Sick Leave">Sick Leave</option>
+                                    <option value="Annual Leave">Annual Leave</option>
+                                    <option value="Unpaid Leave">Unpaid Leave</option>
+                                </select>
+                            </div>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div class="form-group">
+                                    <label>Start Date</label>
+                                    <input type="date" id="leave-start" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>End Date</label>
+                                    <input type="date" id="leave-end" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Reason</label>
+                                <input type="text" id="leave-reason" required placeholder="e.g. Vacation">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn-outline" id="btn-cancel-leave">Cancel</button>
+                                <button type="submit" class="btn-primary" style="padding: 10px 20px;">Create Leave</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-my-leaves" class="tab-content" style="display:none">
+                ${renderHRMyLeavesTab()}
+            </div>
+        `;
+
+        setupLeaveHRListeners();
+    }
+
+    function renderHRMyLeavesTab() {
+        const ownLeaves = state.leaves.filter(l => l.empId === state.currentUser.id);
+        const leaveCount = ownLeaves.length;
+        const leaveBalance = Math.max(0, 10 - leaveCount);
+
+        return `
             <div class="directory-header">
-                <h2>Leave Management</h2>
-                <button class="btn-primary" id="btn-create-leave" style="padding: 10px 20px;">
+                <h2>My Leaves</h2>
+                <button class="btn-primary" id="btn-my-leave-create" style="padding: 10px 20px;">
                     <i data-lucide="calendar-plus"></i> Create Leave
                 </button>
             </div>
 
+            <div class="leave-balance-box glass">
+                <div class="leave-balance-icon">
+                    <i data-lucide="calendar-check"></i>
+                </div>
+                <div class="leave-balance-info">
+                    <h3>Leave Balance</h3>
+                    <p>${leaveBalance}</p>
+                    <span>of 10 leaves remaining</span>
+                </div>
+            </div>
+
             <div class="filter-bar">
-                <select id="leave-status-filter" class="glass-select">
-                    <option value="all">All Statuses</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Rejected">Rejected</option>
-                </select>
-                <select id="leave-month-filter" class="glass-select">
+                <select id="my-leave-month-filter" class="glass-select">
                     <option value="all">All Months</option>
                     ${generateMonthOptions()}
                 </select>
-                <input type="text" id="leave-name-filter" placeholder="Search by name..." style="padding: 10px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); outline: none; font-family: inherit; font-size: 0.9rem;">
             </div>
 
-            <div class="leave-grid">
-                ${state.leaves.length === 0 ? '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-secondary)">No leave requests found.</div>' : ''}
-                ${state.leaves.slice().reverse().map(leave => renderLeaveCard(leave)).join('')}
+            <div class="content-box glass">
+                <div class="attendance-table-container">
+                    <table class="leave-history-table" id="my-leave-history-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${ownLeaves.length === 0
+                ? '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-secondary)">No leave requests found.</td></tr>'
+                : ownLeaves.map(leave => `
+                                    <tr data-month="${(leave.start || '').substring(0, 7)}">
+                                        <td>${leave.type || 'N/A'}</td>
+                                        <td>${leave.start || 'N/A'}</td>
+                                        <td>${leave.end || 'N/A'}</td>
+                                        <td>${leave.reason || 'N/A'}</td>
+                                        <td><span class="status-badge status-${(leave.status || 'pending').toLowerCase()}">${leave.status || 'Pending'}</span></td>
+                                    </tr>
+                                `).join('')}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <div class="modal-overlay" id="leave-modal">
+            <div class="modal-overlay" id="my-leave-modal">
                 <div class="modal-content glass">
                     <div class="box-header">
                         <h2>Create Leave</h2>
-                        <button class="btn-close-icon" id="close-leave-modal"><i data-lucide="x"></i></button>
+                        <button class="btn-close-icon" id="close-my-leave-modal"><i data-lucide="x"></i></button>
                     </div>
-                    <form id="leave-form">
-                        <div class="form-group">
-                            <label>Employee</label>
-                            <select id="leave-emp-name" class="glass-select" required>
-                                ${state.employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('')}
-                            </select>
-                        </div>
+                    <form id="my-leave-form">
                         <div class="form-group">
                             <label>Leave Type</label>
-                            <select id="leave-type" class="glass-select">
+                            <select id="my-leave-type" class="glass-select">
                                 <option value="Casual Leave">Casual Leave</option>
                                 <option value="Sick Leave">Sick Leave</option>
                                 <option value="Annual Leave">Annual Leave</option>
@@ -1070,27 +1183,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                             <div class="form-group">
                                 <label>Start Date</label>
-                                <input type="date" id="leave-start" required>
+                                <input type="date" id="my-leave-start" required>
                             </div>
                             <div class="form-group">
                                 <label>End Date</label>
-                                <input type="date" id="leave-end" required>
+                                <input type="date" id="my-leave-end" required>
                             </div>
                         </div>
                         <div class="form-group">
                             <label>Reason</label>
-                            <input type="text" id="leave-reason" required placeholder="e.g. Vacation">
+                            <input type="text" id="my-leave-reason" required placeholder="e.g. Vacation">
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn-outline" id="btn-cancel-leave">Cancel</button>
+                            <button type="button" class="btn-outline" id="btn-cancel-my-leave">Cancel</button>
                             <button type="submit" class="btn-primary" style="padding: 10px 20px;">Create Leave</button>
                         </div>
                     </form>
                 </div>
             </div>
         `;
-
-        setupLeaveHRListeners();
     }
 
     function generateMonthOptions() {
@@ -1170,6 +1281,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupLeaveHRListeners() {
+        const tabButtons = document.querySelectorAll('.tab-button');
+        tabButtons.forEach(btn => {
+            btn.onclick = () => switchHRTab(btn.getAttribute('data-tab'));
+        });
+
         const btn = document.getElementById('btn-create-leave');
         const modal = document.getElementById('leave-modal');
         const form = document.getElementById('leave-form');
@@ -1240,6 +1356,87 @@ document.addEventListener('DOMContentLoaded', () => {
                     state.leaves.push(newLeave);
 
                     addNotification('success', 'Leave Created', `Leave created for ${newLeave.name}.`);
+                    modal.style.display = 'none';
+                    renderLeaves(document.getElementById('view-container'));
+                } catch (error) {
+                    console.error('Failed to create leave:', error);
+                }
+            };
+        }
+
+        setupHRMyLeavesListeners();
+    }
+
+    function switchHRTab(tabName) {
+        const tabButtons = document.querySelectorAll('.tab-button');
+        tabButtons.forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
+        });
+
+        const mgmtTab = document.getElementById('tab-management');
+        const myLeavesTab = document.getElementById('tab-my-leaves');
+
+        if (mgmtTab) mgmtTab.style.display = tabName === 'management' ? '' : 'none';
+        if (myLeavesTab) myLeavesTab.style.display = tabName === 'my-leaves' ? '' : 'none';
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function setupHRMyLeavesListeners() {
+        const btn = document.getElementById('btn-my-leave-create');
+        const modal = document.getElementById('my-leave-modal');
+        const form = document.getElementById('my-leave-form');
+
+        if (btn) btn.onclick = () => modal.style.display = 'flex';
+        document.getElementById('close-my-leave-modal')?.addEventListener('click', () => closeAllModals());
+        document.getElementById('btn-cancel-my-leave')?.addEventListener('click', () => closeAllModals());
+
+        const monthFilter = document.getElementById('my-leave-month-filter');
+        if (monthFilter) {
+            monthFilter.onchange = () => {
+                const rows = document.querySelectorAll('#my-leave-history-table tbody tr');
+                rows.forEach(row => {
+                    if (monthFilter.value === 'all' || row.getAttribute('data-month') === monthFilter.value) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            };
+        }
+
+        if (form) {
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                const start = document.getElementById('my-leave-start').value;
+                const end = document.getElementById('my-leave-end').value;
+                const type = document.getElementById('my-leave-type').value;
+
+                try {
+                    const response = await apiCall(`${API_BASE_URL}/leaves`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            leave_type: type,
+                            start_date: start,
+                            end_date: end,
+                            reason: document.getElementById('my-leave-reason').value
+                        })
+                    });
+
+                    const newLeave = {
+                        id: response.id,
+                        empId: response.employee_id,
+                        name: response.employee_name || state.currentUser.name,
+                        type: response.leave_type,
+                        start: response.start_date,
+                        end: response.end_date,
+                        reason: response.reason,
+                        status: response.status
+                    };
+                    state.leaves.push(newLeave);
+
+                    addNotification('success', 'Leave Created', 'Your leave has been created.');
                     modal.style.display = 'none';
                     renderLeaves(document.getElementById('view-container'));
                 } catch (error) {

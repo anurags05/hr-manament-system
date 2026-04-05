@@ -1525,6 +1525,43 @@ ul {
     border-color: var(--accent-color);
 }
 
+/* Tab Bar */
+.tab-bar {
+    display: flex;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: var(--space-sm);
+}
+
+.tab-button {
+    padding: 10px 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 8px 8px 0 0;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.tab-button.active {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: var(--accent-color);
+    border-bottom-color: transparent;
+    color: var(--accent-color);
+}
+
+.tab-content {
+    display: block;
+}
+
 /* Hide nav items by default (shown via JS based on role) */
 #nav-list li[data-page] {
     display: none;
