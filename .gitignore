@@ -7,13 +7,13 @@
 #Specific Exclusions
 database.db
 plan.md
-
+attendanceplan.md
+leavesplan.md
 
 # Strict Inclusions 
 !newtasks.md
 !requirements.txt
 !setup_backend.bat
-!leavesplan.md
 
 #python cache
 __pycache__/

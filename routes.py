@@ -306,7 +306,7 @@ def get_attendance():
 
 @app.route('/api/attendance/clock-in', methods=['POST'])
 @login_required
-@role_required('employee', 'gm')
+@role_required('employee', 'gm', 'hr')
 def clock_in():
     employee_id = session['emp_id']
     date = datetime.utcnow().date()
@@ -325,7 +325,7 @@ def clock_in():
 
 @app.route('/api/attendance/clock-out', methods=['POST'])
 @login_required
-@role_required('employee', 'gm')
+@role_required('employee', 'gm', 'hr')
 def clock_out():
     employee_id = session['emp_id']
     today = datetime.utcnow().date()

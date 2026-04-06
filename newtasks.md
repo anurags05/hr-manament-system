@@ -52,19 +52,20 @@
 ### [HR] leaves page - keep existing page for hr [DONE]
 ### [HR] change request to create leaves button + keep accept/reject button on request cards [DONE]
 ### [HR] add seperate filter buttons for status(accepted/reject) and by month and by name [DONE]
-### [HR] create a my leaves tab and management tab for other employees 
+### [HR] create a my leaves tab and management tab for other employees [DONE]
 -------------------------------------------------------------------
 # [Attendance page changes]
-[EMP+GM] filter by button for month, ¨
+### [EMP+GM] filter by button for month, [DONE]
 
-
+### [HR] filter by buttons for name and month [DONE]
+ 
 
 
 ----------------------------------------------------------------
 # [Payroll and Payslip pages]
 	make seperate pages for payroll generation and payslip viewing. use RBAC to implement GM + EMP -> payslip, hr -> payslip + payroll 
 [DONE]
-
+""
 ## payroll(HR) - existing page + dialogue box + add filter by month and name
 ### [HR] payroll edit stub/box-
 	
@@ -75,7 +76,7 @@
 	
 	
 
-# [EMP + GM]
+## [EMP + GM]
 
 ### new payslip page - monthwise history of past payslips in table ui format similar to attendance records style
 ### gm + employee can only see his own history of salary slips
@@ -89,6 +90,8 @@
 ### logo branding css
 ### dynamic page loading
 ### add a clear all button in notifications tab
+
+# [Database population]
 ### populate db with multiple months:
 	#### [HR]
 		of atleast 3 months of attendance, 
@@ -103,6 +106,7 @@
 ### rescript seed_db.py to repopulate proper leave reasons instead of random word strings
 ### database doesnt have a no of hours in attend table (clockout-clockin func)
 
+# [Debug]
 ### debug: user1 doesn't have numb and date in profile dropdown
 
 

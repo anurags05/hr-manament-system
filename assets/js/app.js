@@ -1518,6 +1518,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 })()}
             </div>
 
+            <div class="filter-bar">
+                <select id="attendance-month-filter" class="glass-select">
+                    <option value="all">All Months</option>
+                    ${generateMonthOptions()}
+                </select>
+                ${userRole === 'hr' ? `<input type="text" id="attendance-name-filter" placeholder="Search by name..." style="padding: 10px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); outline: none; font-family: inherit; font-size: 0.9rem;">` : ''}
+            </div>
+
             <div class="content-box glass">
                 <div class="clock-card" style="display: flex; flex-direction: column; align-items: center; gap: var(--space-md); padding: var(--space-md); margin-bottom: var(--space-lg);">
                     <p style="font-size: 0.9rem; color: var(--text-secondary);" id="clock-status">
@@ -1548,7 +1556,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const hasClockOut = log.clockOut && log.clockOut !== '--:--';
                     const diff = hasClockOut && log.clockIn ? calculateHours(log.clockIn, log.clockOut) : '--';
                     return `
-                                        <tr>
+                                        <tr data-month="${(log.date || '').substring(0, 7)}" data-employee="${log.employee_name || ''}">
                                             ${userRole === 'hr' ? `<td>${log.employee_name || 'Unknown'}</td>` : ''}
                                             <td>${log.date || 'N/A'}</td>
                                             <td>${log.clockIn || '--:--'}</td>
@@ -1648,6 +1656,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupAttendanceListeners() {
         const clockBtn = document.getElementById('btn-toggle-clock');
+
+        const monthFilter = document.getElementById('attendance-month-filter');
+        const nameFilter = document.getElementById('attendance-name-filter');
+
+        const filterAttendance = () => {
+            const month = monthFilter ? monthFilter.value : 'all';
+            const name = nameFilter ? nameFilter.value.toLowerCase() : '';
+
+            const rows = document.querySelectorAll('.attendance-table tbody tr');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                if (row.getAttribute('colspan')) return;
+
+                const matchMonth = month === 'all' || row.getAttribute('data-month') === month;
+                const matchName = name === '' || (row.getAttribute('data-employee') || '').toLowerCase().includes(name);
+                const isVisible = matchMonth && matchName;
+
+                row.style.display = isVisible ? '' : 'none';
+                if (isVisible) visibleCount++;
+            });
+
+            const tbody = document.querySelector('.attendance-table tbody');
+            let emptyRow = tbody.querySelector('.filter-empty-state');
+
+            if (visibleCount === 0 && rows.length > 0) {
+                if (!emptyRow) {
+                    emptyRow = document.createElement('tr');
+                    emptyRow.classList.add('filter-empty-state');
+                    emptyRow.innerHTML = `<td colspan="${nameFilter ? 6 : 5}" style="text-align:center; padding:40px; color:var(--text-secondary)">No results match your filter</td>`;
+                    tbody.appendChild(emptyRow);
+                }
+                emptyRow.style.display = '';
+            } else if (emptyRow) {
+                emptyRow.style.display = 'none';
+            }
+        };
+
+        if (monthFilter) monthFilter.onchange = filterAttendance;
+        if (nameFilter) nameFilter.oninput = filterAttendance;
+
         if (!clockBtn) return;
 
         clockBtn.onclick = async () => {
