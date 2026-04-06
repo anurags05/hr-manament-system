@@ -95,7 +95,7 @@
 ### populate db with multiple months:
 	#### [HR]
 		of atleast 3 months of attendance, 
-		1 years of payslips, 
+		1 year of payslips, 
 		1 year of leaves
 	#### [GM + EMP]
 		of atleast 3 months of attendance, 

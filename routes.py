@@ -203,20 +203,37 @@ def delete_employee(id):
 def get_leaves():
     user_role = session['role']
     emp_id = session['emp_id']
+    month = request.args.get('month')
 
     if user_role == 'hr':
-        leaves = query_db('''
-            SELECT l.*, e.name as employee_name
-            FROM leaves l
-            LEFT JOIN employees e ON l.employee_id = e.id
-        ''')
+        if month:
+            leaves = query_db('''
+                SELECT l.*, e.name as employee_name
+                FROM leaves l
+                LEFT JOIN employees e ON l.employee_id = e.id
+                WHERE strftime('%Y-%m', l.start_date) = ?
+            ''', [month])
+        else:
+            leaves = query_db('''
+                SELECT l.*, e.name as employee_name
+                FROM leaves l
+                LEFT JOIN employees e ON l.employee_id = e.id
+            ''')
     else:
-        leaves = query_db('''
-            SELECT l.*, e.name as employee_name
-            FROM leaves l
-            LEFT JOIN employees e ON l.employee_id = e.id
-            WHERE l.employee_id = ?
-        ''', [emp_id])
+        if month:
+            leaves = query_db('''
+                SELECT l.*, e.name as employee_name
+                FROM leaves l
+                LEFT JOIN employees e ON l.employee_id = e.id
+                WHERE l.employee_id = ? AND strftime('%Y-%m', l.start_date) = ?
+            ''', [emp_id, month])
+        else:
+            leaves = query_db('''
+                SELECT l.*, e.name as employee_name
+                FROM leaves l
+                LEFT JOIN employees e ON l.employee_id = e.id
+                WHERE l.employee_id = ?
+            ''', [emp_id])
 
     return jsonify([dict(l) for l in leaves])
 
@@ -285,22 +302,41 @@ def update_leave_status(id):
 def get_attendance():
     user_role = session['role']
     emp_id = session['emp_id']
+    month = request.args.get('month')
 
     if user_role == 'hr':
-        attendance = query_db('''
-            SELECT a.*, e.name as employee_name
-            FROM attendance a
-            LEFT JOIN employees e ON a.employee_id = e.id
-            ORDER BY a.date DESC
-        ''')
+        if month:
+            attendance = query_db('''
+                SELECT a.*, e.name as employee_name
+                FROM attendance a
+                LEFT JOIN employees e ON a.employee_id = e.id
+                WHERE strftime('%Y-%m', a.date) = ?
+                ORDER BY a.date DESC
+            ''', [month])
+        else:
+            attendance = query_db('''
+                SELECT a.*, e.name as employee_name
+                FROM attendance a
+                LEFT JOIN employees e ON a.employee_id = e.id
+                ORDER BY a.date DESC
+            ''')
     else:
-        attendance = query_db('''
-            SELECT a.*, e.name as employee_name
-            FROM attendance a
-            LEFT JOIN employees e ON a.employee_id = e.id
-            WHERE a.employee_id = ?
-            ORDER BY a.date DESC
-        ''', [emp_id])
+        if month:
+            attendance = query_db('''
+                SELECT a.*, e.name as employee_name
+                FROM attendance a
+                LEFT JOIN employees e ON a.employee_id = e.id
+                WHERE a.employee_id = ? AND strftime('%Y-%m', a.date) = ?
+                ORDER BY a.date DESC
+            ''', [emp_id, month])
+        else:
+            attendance = query_db('''
+                SELECT a.*, e.name as employee_name
+                FROM attendance a
+                LEFT JOIN employees e ON a.employee_id = e.id
+                WHERE a.employee_id = ?
+                ORDER BY a.date DESC
+            ''', [emp_id])
 
     return jsonify([dict(a) for a in attendance])
 
@@ -335,8 +371,11 @@ def clock_out():
                           (employee_id, today), one=True)
 
     if attendance:
+        clock_in = datetime.strptime(attendance['clock_in_time'], '%Y-%m-%d %H:%M:%S.%f') if '.' in str(attendance['clock_in_time']) else datetime.strptime(attendance['clock_in_time'], '%Y-%m-%d %H:%M:%S')
+        hours_worked = round((clock_out_time - clock_in).total_seconds() / 3600, 2)
+
         db = get_db()
-        db.execute('UPDATE attendance SET clock_out_time = ? WHERE id = ?', (clock_out_time, attendance['id']))
+        db.execute('UPDATE attendance SET clock_out_time = ?, hours_worked = ? WHERE id = ?', (clock_out_time, hours_worked, attendance['id']))
         db.commit()
 
         updated_attendance = query_db('SELECT * FROM attendance WHERE id = ?', [attendance['id']], one=True)
@@ -351,20 +390,37 @@ def clock_out():
 def get_payroll():
     user_role = session['role']
     emp_id = session['emp_id']
+    month = request.args.get('month')
 
     if user_role == 'hr':
-        payrolls = query_db('''
-            SELECT p.*, e.name as employee_name, e.role as employee_role
-            FROM payroll p
-            LEFT JOIN employees e ON p.employee_id = e.id
-        ''')
+        if month:
+            payrolls = query_db('''
+                SELECT p.*, e.name as employee_name, e.role as employee_role
+                FROM payroll p
+                LEFT JOIN employees e ON p.employee_id = e.id
+                WHERE p.month = ?
+            ''', [month])
+        else:
+            payrolls = query_db('''
+                SELECT p.*, e.name as employee_name, e.role as employee_role
+                FROM payroll p
+                LEFT JOIN employees e ON p.employee_id = e.id
+            ''')
     else:
-        payrolls = query_db('''
-            SELECT p.*, e.name as employee_name, e.role as employee_role
-            FROM payroll p
-            LEFT JOIN employees e ON p.employee_id = e.id
-            WHERE p.employee_id = ?
-        ''', [emp_id])
+        if month:
+            payrolls = query_db('''
+                SELECT p.*, e.name as employee_name, e.role as employee_role
+                FROM payroll p
+                LEFT JOIN employees e ON p.employee_id = e.id
+                WHERE p.employee_id = ? AND p.month = ?
+            ''', [emp_id, month])
+        else:
+            payrolls = query_db('''
+                SELECT p.*, e.name as employee_name, e.role as employee_role
+                FROM payroll p
+                LEFT JOIN employees e ON p.employee_id = e.id
+                WHERE p.employee_id = ?
+            ''', [emp_id])
 
     return jsonify([dict(p) for p in payrolls])
 
@@ -380,14 +436,17 @@ def generate_payroll():
     deductions = data.get('deductions', 0.0)
     net_pay = basic_salary + bonus - deductions
 
+    week_number = data.get('week_number')
+    bank_name = data.get('bank_name')
+
     if query_db('SELECT id FROM employees WHERE id = ?', [employee_id], one=True) is None:
         return jsonify({'error': 'Employee not found'}), 404
 
     db = get_db()
     cursor = db.execute('''
-        INSERT INTO payroll (employee_id, month, basic_salary, bonus, deductions, net_pay)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (employee_id, month, basic_salary, bonus, deductions, net_pay))
+        INSERT INTO payroll (employee_id, month, week_number, basic_salary, bonus, deductions, net_pay, bank_name)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (employee_id, month, week_number, basic_salary, bonus, deductions, net_pay, bank_name))
     db.commit()
 
     new_id = cursor.lastrowid

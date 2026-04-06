@@ -17,6 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
         leaves: [],
         attendance: [],
         payroll: [],
+        _leavesCache: {},
+        _attendanceCache: {},
+        _payrollCache: {},
         isClockedIn: false,
         lastClockInTime: null,
         editingId: null,
@@ -113,6 +116,9 @@ document.addEventListener('DOMContentLoaded', () => {
         state.leaves = [];
         state.attendance = [];
         state.payroll = [];
+        state._leavesCache = {};
+        state._attendanceCache = {};
+        state._payrollCache = {};
         state.isClockedIn = false;
         state.lastClockInTime = null;
         showLogin();
@@ -212,7 +218,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadDataFromAPI() {
-        // Load stats for dashboard (all roles)
         try {
             const stats = await apiCall(`${API_BASE_URL}/stats`);
             state.dashboardStats = stats;
@@ -220,7 +225,6 @@ document.addEventListener('DOMContentLoaded', () => {
             state.dashboardStats = { total_employees: 0, active_leaves: 0, present_today: 0, on_time: 0 };
         }
 
-        // Only HR can access full employee list
         if (state.currentUser.role === 'hr') {
             try {
                 const employees = await apiCall(`${API_BASE_URL}/employees`);
@@ -237,7 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.employees = [];
             }
         } else {
-            // Non-HR users: load current user's employee record for display
             state.employees = [{
                 id: state.currentUser.id,
                 name: state.currentUser.name,
@@ -249,9 +252,29 @@ document.addEventListener('DOMContentLoaded', () => {
             }];
         }
 
+        await loadLeaves();
+        await loadAttendance();
+        await loadPayroll();
+
+        console.log('Data loaded from API successfully');
+        console.log('State employees:', state.employees.length, 'leaves:', state.leaves.length, 'attendance:', state.attendance.length, 'payroll:', state.payroll.length);
+        console.log('Current user role:', state.currentUser.role);
+    }
+
+    function getCurrentMonth() {
+        return new Date().toISOString().substring(0, 7);
+    }
+
+    async function loadLeaves(month = null) {
+        const cacheKey = month || 'all';
+        if (state._leavesCache && state._leavesCache[cacheKey]) {
+            state.leaves = state._leavesCache[cacheKey];
+            return;
+        }
+        const url = month ? `${API_BASE_URL}/leaves?month=${month}` : `${API_BASE_URL}/leaves`;
         try {
-            const leaves = await apiCall(`${API_BASE_URL}/leaves`);
-            state.leaves = leaves.map(leave => ({
+            const leaves = await apiCall(url);
+            const mapped = leaves.map(leave => ({
                 id: leave.id,
                 empId: leave.employee_id,
                 name: leave.employee_name || 'Unknown',
@@ -261,21 +284,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 reason: leave.reason,
                 status: leave.status
             }));
+            if (!state._leavesCache) state._leavesCache = {};
+            state._leavesCache[cacheKey] = mapped;
+            state.leaves = mapped;
         } catch {
             state.leaves = [];
         }
+    }
 
+    async function loadAttendance(month = null) {
+        const cacheKey = month || 'all';
+        if (state._attendanceCache && state._attendanceCache[cacheKey]) {
+            state.attendance = state._attendanceCache[cacheKey];
+            return;
+        }
+        const url = month ? `${API_BASE_URL}/attendance?month=${month}` : `${API_BASE_URL}/attendance`;
         try {
-            const attendance = await apiCall(`${API_BASE_URL}/attendance`);
-            state.attendance = attendance.map(att => ({
+            const attendance = await apiCall(url);
+            const mapped = attendance.map(att => ({
                 id: att.id,
                 employee_id: att.employee_id,
                 employee_name: att.employee_name || 'Unknown',
                 date: att.date,
                 clockIn: att.clock_in_time ? new Date(att.clock_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--',
                 clockOut: att.clock_out_time ? new Date(att.clock_out_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--',
+                hoursWorked: att.hours_worked ? `${att.hours_worked}h` : '--',
                 status: 'On Time'
             }));
+            if (!state._attendanceCache) state._attendanceCache = {};
+            state._attendanceCache[cacheKey] = mapped;
+            state.attendance = mapped;
 
             const today = new Date().toISOString().split('T')[0];
             const todayRecord = attendance.find(att =>
@@ -293,27 +331,36 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch {
             state.attendance = [];
         }
+    }
 
+    async function loadPayroll(month = null) {
+        const cacheKey = month || 'all';
+        if (state._payrollCache && state._payrollCache[cacheKey]) {
+            state.payroll = state._payrollCache[cacheKey];
+            return;
+        }
+        const url = month ? `${API_BASE_URL}/payroll?month=${month}` : `${API_BASE_URL}/payroll`;
         try {
-            const payroll = await apiCall(`${API_BASE_URL}/payroll`);
-            state.payroll = payroll.map(pay => ({
+            const payroll = await apiCall(url);
+            const mapped = payroll.map(pay => ({
                 id: pay.id,
                 empId: pay.employee_id,
                 employee_name: pay.employee_name || 'Unknown',
                 employee_role: pay.employee_role || '',
                 month: pay.month,
+                week_number: pay.week_number,
                 basic: pay.basic_salary,
                 bonus: pay.bonus,
                 deductions: pay.deductions,
-                net: pay.net_pay
+                net: pay.net_pay,
+                bank_name: pay.bank_name || 'N/A'
             }));
+            if (!state._payrollCache) state._payrollCache = {};
+            state._payrollCache[cacheKey] = mapped;
+            state.payroll = mapped;
         } catch {
             state.payroll = [];
         }
-
-        console.log('Data loaded from API successfully');
-        console.log('State employees:', state.employees.length, 'leaves:', state.leaves.length, 'attendance:', state.attendance.length, 'payroll:', state.payroll.length);
-        console.log('Current user role:', state.currentUser.role);
     }
 
     function applyTheme(theme) {
@@ -533,7 +580,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.editingId = null;
     }
 
-    function renderCurrentView() {
+    async function renderCurrentView() {
         const container = document.getElementById('view-container');
         const role = (state.currentUser.role || '').toLowerCase();
         const allowed = rolePermissions[role] || [];
@@ -553,16 +600,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     renderDirectory(container);
                     break;
                 case 'leaves':
-                    renderLeaves(container);
+                    await renderLeaves(container);
                     break;
                 case 'attendance':
-                    renderAttendance(container);
+                    await renderAttendance(container);
                     break;
                 case 'payroll':
                     renderPayroll(container);
                     break;
                 case 'payslip':
-                    renderPayslip(container);
+                    await renderPayslip(container);
                     break;
                 default:
                     container.innerHTML = `<h1>${state.currentPage.charAt(0).toUpperCase() + state.currentPage.slice(1)}</h1><p>Coming soon...</p>`;
@@ -905,20 +952,20 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    function renderLeaves(container) {
+    async function renderLeaves(container, month = getCurrentMonth()) {
         const userRole = state.currentUser.role;
-
         if (userRole === 'hr') {
-            renderLeavesHR(container);
+            await renderLeavesHR(container, month);
         } else {
-            renderLeavesEmployee(container);
+            await renderLeavesEmployee(container, month);
         }
     }
 
-    function renderLeavesEmployee(container) {
+    async function renderLeavesEmployee(container, month = null) {
+        await loadLeaves(month);
         const ownLeaves = state.leaves.filter(l => l.empId === state.currentUser.id);
         const leaveCount = ownLeaves.length;
-        const leaveBalance = Math.max(0, 10 - leaveCount);
+        const leaveBalance = Math.max(0, 30 - leaveCount);
 
         container.innerHTML = `
             <div class="directory-header">
@@ -927,42 +974,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     <i data-lucide="calendar-plus"></i> Request Leave
                 </button>
             </div>
-
             <div class="leave-balance-box glass">
-                <div class="leave-balance-icon">
-                    <i data-lucide="calendar-check"></i>
-                </div>
+                <div class="leave-balance-icon"><i data-lucide="calendar-check"></i></div>
                 <div class="leave-balance-info">
                     <h3>Leave Balance</h3>
                     <p>${leaveBalance}</p>
-                    <span>of 10 leaves remaining</span>
+                    <span>of 30 leaves remaining</span>
                 </div>
             </div>
-
             <div class="filter-bar">
                 <select id="leave-month-filter" class="glass-select">
                     <option value="all">All Months</option>
                     ${generateMonthOptions()}
                 </select>
             </div>
-
             <div class="content-box glass">
                 <div class="attendance-table-container">
                     <table class="leave-history-table" id="leave-history-table">
-                        <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                                <th>Reason</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>Type</th><th>Start Date</th><th>End Date</th><th>Reason</th><th>Status</th></tr></thead>
                         <tbody>
                             ${ownLeaves.length === 0
                 ? '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-secondary)">No leave requests found.</td></tr>'
                 : ownLeaves.map(leave => `
-                                    <tr data-month="${(leave.start || '').substring(0, 7)}">
+                                    <tr>
                                         <td>${leave.type || 'N/A'}</td>
                                         <td>${leave.start || 'N/A'}</td>
                                         <td>${leave.end || 'N/A'}</td>
@@ -974,7 +1008,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </table>
                 </div>
             </div>
-
             <div class="modal-overlay" id="leave-modal">
                 <div class="modal-content glass">
                     <div class="box-header">
@@ -992,19 +1025,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             </select>
                         </div>
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div class="form-group">
-                                <label>Start Date</label>
-                                <input type="date" id="leave-start" required>
-                            </div>
-                            <div class="form-group">
-                                <label>End Date</label>
-                                <input type="date" id="leave-end" required>
-                            </div>
+                            <div class="form-group"><label>Start Date</label><input type="date" id="leave-start" required></div>
+                            <div class="form-group"><label>End Date</label><input type="date" id="leave-end" required></div>
                         </div>
-                        <div class="form-group">
-                            <label>Reason</label>
-                            <input type="text" id="leave-reason" required placeholder="e.g. Vacation">
-                        </div>
+                        <div class="form-group"><label>Reason</label><input type="text" id="leave-reason" required placeholder="e.g. Vacation"></div>
                         <div class="modal-footer">
                             <button type="button" class="btn-outline" id="btn-cancel-leave">Cancel</button>
                             <button type="submit" class="btn-primary" style="padding: 10px 20px;">Submit Request</button>
@@ -1013,17 +1037,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
-
+        if (month) { const sel = document.getElementById('leave-month-filter'); if (sel) sel.value = month; }
         setupLeaveEmployeeListeners();
     }
 
-    function renderLeavesHR(container) {
+    async function renderLeavesHR(container, month = null) {
+        await loadLeaves(month);
         container.innerHTML = `
             <div class="tab-bar">
                 <button class="tab-button active" data-tab="management">Manage Leaves</button>
                 <button class="tab-button" data-tab="my-leaves">My Leaves</button>
             </div>
-
             <div id="tab-management" class="tab-content">
                 <div class="directory-header">
                     <h2>Leave Management</h2>
@@ -1031,7 +1055,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         <i data-lucide="calendar-plus"></i> Create Leave
                     </button>
                 </div>
-
                 <div class="filter-bar">
                     <select id="leave-status-filter" class="glass-select">
                         <option value="all">All Statuses</option>
@@ -1045,12 +1068,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     </select>
                     <input type="text" id="leave-name-filter" placeholder="Search by name..." style="padding: 10px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); outline: none; font-family: inherit; font-size: 0.9rem;">
                 </div>
-
                 <div class="leave-grid">
                     ${state.leaves.length === 0 ? '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--text-secondary)">No leave requests found.</div>' : ''}
                     ${state.leaves.slice().reverse().map(leave => renderLeaveCard(leave)).join('')}
                 </div>
-
                 <div class="modal-overlay" id="leave-modal">
                     <div class="modal-content glass">
                         <div class="box-header">
@@ -1074,19 +1095,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </select>
                             </div>
                             <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                                <div class="form-group">
-                                    <label>Start Date</label>
-                                    <input type="date" id="leave-start" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>End Date</label>
-                                    <input type="date" id="leave-end" required>
-                                </div>
+                                <div class="form-group"><label>Start Date</label><input type="date" id="leave-start" required></div>
+                                <div class="form-group"><label>End Date</label><input type="date" id="leave-end" required></div>
                             </div>
-                            <div class="form-group">
-                                <label>Reason</label>
-                                <input type="text" id="leave-reason" required placeholder="e.g. Vacation">
-                            </div>
+                            <div class="form-group"><label>Reason</label><input type="text" id="leave-reason" required placeholder="e.g. Vacation"></div>
                             <div class="modal-footer">
                                 <button type="button" class="btn-outline" id="btn-cancel-leave">Cancel</button>
                                 <button type="submit" class="btn-primary" style="padding: 10px 20px;">Create Leave</button>
@@ -1095,63 +1107,48 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             </div>
-
-            <div id="tab-my-leaves" class="tab-content" style="display:none">
-                ${renderHRMyLeavesTab()}
-            </div>
+            <div id="tab-my-leaves" class="tab-content" style="display:none"></div>
         `;
-
+        if (month) { const sel = document.getElementById('leave-month-filter'); if (sel) sel.value = month; }
         setupLeaveHRListeners();
     }
 
-    function renderHRMyLeavesTab() {
+    async function renderHRMyLeavesTab(container, month = null) {
+        await loadLeaves(month);
         const ownLeaves = state.leaves.filter(l => l.empId === state.currentUser.id);
         const leaveCount = ownLeaves.length;
-        const leaveBalance = Math.max(0, 10 - leaveCount);
+        const leaveBalance = Math.max(0, 30 - leaveCount);
 
-        return `
+        container.innerHTML = `
             <div class="directory-header">
                 <h2>My Leaves</h2>
                 <button class="btn-primary" id="btn-my-leave-create" style="padding: 10px 20px;">
                     <i data-lucide="calendar-plus"></i> Create Leave
                 </button>
             </div>
-
             <div class="leave-balance-box glass">
-                <div class="leave-balance-icon">
-                    <i data-lucide="calendar-check"></i>
-                </div>
+                <div class="leave-balance-icon"><i data-lucide="calendar-check"></i></div>
                 <div class="leave-balance-info">
                     <h3>Leave Balance</h3>
                     <p>${leaveBalance}</p>
-                    <span>of 10 leaves remaining</span>
+                    <span>of 30 leaves remaining</span>
                 </div>
             </div>
-
             <div class="filter-bar">
                 <select id="my-leave-month-filter" class="glass-select">
                     <option value="all">All Months</option>
                     ${generateMonthOptions()}
                 </select>
             </div>
-
             <div class="content-box glass">
                 <div class="attendance-table-container">
                     <table class="leave-history-table" id="my-leave-history-table">
-                        <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                                <th>Reason</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>Type</th><th>Start Date</th><th>End Date</th><th>Reason</th><th>Status</th></tr></thead>
                         <tbody>
                             ${ownLeaves.length === 0
                 ? '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-secondary)">No leave requests found.</td></tr>'
                 : ownLeaves.map(leave => `
-                                    <tr data-month="${(leave.start || '').substring(0, 7)}">
+                                    <tr>
                                         <td>${leave.type || 'N/A'}</td>
                                         <td>${leave.start || 'N/A'}</td>
                                         <td>${leave.end || 'N/A'}</td>
@@ -1163,7 +1160,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </table>
                 </div>
             </div>
-
             <div class="modal-overlay" id="my-leave-modal">
                 <div class="modal-content glass">
                     <div class="box-header">
@@ -1181,19 +1177,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             </select>
                         </div>
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div class="form-group">
-                                <label>Start Date</label>
-                                <input type="date" id="my-leave-start" required>
-                            </div>
-                            <div class="form-group">
-                                <label>End Date</label>
-                                <input type="date" id="my-leave-end" required>
-                            </div>
+                            <div class="form-group"><label>Start Date</label><input type="date" id="my-leave-start" required></div>
+                            <div class="form-group"><label>End Date</label><input type="date" id="my-leave-end" required></div>
                         </div>
-                        <div class="form-group">
-                            <label>Reason</label>
-                            <input type="text" id="my-leave-reason" required placeholder="e.g. Vacation">
-                        </div>
+                        <div class="form-group"><label>Reason</label><input type="text" id="my-leave-reason" required placeholder="e.g. Vacation"></div>
                         <div class="modal-footer">
                             <button type="button" class="btn-outline" id="btn-cancel-my-leave">Cancel</button>
                             <button type="submit" class="btn-primary" style="padding: 10px 20px;">Create Leave</button>
@@ -1202,6 +1189,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
+        if (month) { const sel = document.getElementById('my-leave-month-filter'); if (sel) sel.value = month; }
     }
 
     function generateMonthOptions() {
@@ -1228,14 +1216,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const monthFilter = document.getElementById('leave-month-filter');
         if (monthFilter) {
             monthFilter.onchange = () => {
-                const rows = document.querySelectorAll('#leave-history-table tbody tr');
-                rows.forEach(row => {
-                    if (monthFilter.value === 'all' || row.getAttribute('data-month') === monthFilter.value) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
+                const month = monthFilter.value === 'all' ? null : monthFilter.value;
+                renderLeavesEmployee(document.getElementById('view-container'), month);
             };
         }
 
@@ -1300,7 +1282,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const filterLeaves = () => {
             const status = statusFilter ? statusFilter.value : 'all';
-            const month = monthFilter ? monthFilter.value : 'all';
             const name = nameFilter ? nameFilter.value.toLowerCase() : '';
 
             const cards = document.querySelectorAll('.leave-card');
@@ -1310,16 +1291,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!leave) return;
 
                 const matchStatus = status === 'all' || leave.status === status;
-                const matchMonth = month === 'all' || (leave.start || '').substring(0, 7) === month;
                 const matchName = name === '' || leave.name.toLowerCase().includes(name);
 
-                card.style.display = (matchStatus && matchMonth && matchName) ? '' : 'none';
+                card.style.display = (matchStatus && matchName) ? '' : 'none';
             });
         };
 
         if (statusFilter) statusFilter.onchange = filterLeaves;
-        if (monthFilter) monthFilter.onchange = filterLeaves;
         if (nameFilter) nameFilter.oninput = filterLeaves;
+
+        if (monthFilter) {
+            monthFilter.onchange = () => {
+                const month = monthFilter.value === 'all' ? null : monthFilter.value;
+                renderLeaves(document.getElementById('view-container'), month);
+            };
+        }
 
         if (form) {
             form.onsubmit = async (e) => {
@@ -1367,7 +1353,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupHRMyLeavesListeners();
     }
 
-    function switchHRTab(tabName) {
+    async function switchHRTab(tabName) {
         const tabButtons = document.querySelectorAll('.tab-button');
         tabButtons.forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
@@ -1377,7 +1363,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const myLeavesTab = document.getElementById('tab-my-leaves');
 
         if (mgmtTab) mgmtTab.style.display = tabName === 'management' ? '' : 'none';
-        if (myLeavesTab) myLeavesTab.style.display = tabName === 'my-leaves' ? '' : 'none';
+        if (myLeavesTab) {
+            if (tabName === 'my-leaves') {
+                myLeavesTab.style.display = '';
+                await renderHRMyLeavesTab(myLeavesTab);
+            } else {
+                myLeavesTab.style.display = 'none';
+            }
+        }
 
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
@@ -1394,14 +1387,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const monthFilter = document.getElementById('my-leave-month-filter');
         if (monthFilter) {
             monthFilter.onchange = () => {
-                const rows = document.querySelectorAll('#my-leave-history-table tbody tr');
-                rows.forEach(row => {
-                    if (monthFilter.value === 'all' || row.getAttribute('data-month') === monthFilter.value) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
+                const month = monthFilter.value === 'all' ? null : monthFilter.value;
+                const myLeavesTab = document.getElementById('tab-my-leaves');
+                if (myLeavesTab) {
+                    renderHRMyLeavesTab(myLeavesTab, month);
+                }
             };
         }
 
@@ -1483,7 +1473,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Attendance View ---
-    function renderAttendance(container) {
+    async function renderAttendance(container) {
+        await loadAttendance();
         const userRole = state.currentUser.role;
         const records = userRole === 'hr' ? state.attendance : state.attendance.filter(a => a.employee_id === state.currentUser.id);
 
@@ -1826,7 +1817,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Payslip View (Employee/GM) ---
-    function renderPayslip(container) {
+    async function renderPayslip(container) {
+        await loadPayroll();
         const userRole = state.currentUser.role;
         const myPayslips = userRole === 'hr'
             ? state.payroll

@@ -39,6 +39,7 @@ def create_tables():
             date DATE DEFAULT (DATE('now')),
             clock_in_time DATETIME,
             clock_out_time DATETIME,
+            hours_worked REAL,
             FOREIGN KEY (employee_id) REFERENCES employees (id)
         )
     ''')
@@ -49,10 +50,12 @@ def create_tables():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             employee_id INTEGER NOT NULL,
             month TEXT NOT NULL,
+            week_number INTEGER,
             basic_salary REAL NOT NULL,
             bonus REAL DEFAULT 0.0,
             deductions REAL DEFAULT 0.0,
             net_pay REAL NOT NULL,
+            bank_name TEXT,
             FOREIGN KEY (employee_id) REFERENCES employees (id)
         )
     ''')
