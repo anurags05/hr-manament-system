@@ -14,7 +14,8 @@ leavesplan.md
 !newtasks.md
 !requirements.txt
 !setup_backend.bat
-
+!reseed.md
+!alchemywipe.md
 #python cache
 __pycache__/
 #venvs
