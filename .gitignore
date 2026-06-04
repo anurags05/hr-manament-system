@@ -1,21 +1,28 @@
 *.drawio
-*.md
+// *.md
 *.txt
 *.env
-*.pdf
+// *.pdf
+*.docx
 
 #Specific Exclusions
-database.db
-plan.md
-attendanceplan.md
-leavesplan.md
+# database.db
+# plan.md
+# attendanceplan.md
+# leavesplan.md
 
 # Strict Inclusions 
 !newtasks.md
 !requirements.txt
 !setup_backend.bat
 !reseed.md
-!alchemywipe.md
+!rbacplan.md
+!plan.md
+!content.md
+!rbacmodule.md
+!LABORATORY MANUAL.PDF"
+
+
 #python cache
 __pycache__/
 #venvs

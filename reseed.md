@@ -88,10 +88,12 @@ CREATE TABLE IF NOT EXISTS payroll (
 - **Hours calculation:** `hours_worked = (clock_out - clock_in).total_seconds() / 3600`
 - **Clock times:** 9:00 AM +- 30 min, 5:00 PM +- 30 min (unchanged)
 
-##### 4. Leaves — 1 Year Span
+##### 4. Leaves — 1 Year Span, 24+ Per Employee
 - **Before:** `-1y` to `today` (already correct range, but low density)
-- **After:** Ensure leaves are distributed across the full 12-month period
-- **Increase density:** Some employees get 2-5 leaves spread across the year
+- **After:** At least 24 leaves per employee spread across the full 12-month period
+- **Distribution:** Not necessarily 2 per month — random spread across the year
+- **Status mix:** Mix of Approved, Pending, Rejected
+- **Frontend impact:** Leave balance counter in `app.js` uses hardcoded `10 - leaveCount`. Must be updated to `30 - leaveCount` with text "of 30 leaves remaining" (lines 922, 1110, 1128)
 
 ##### 5. Payslips — Weekly, 12 Months
 - **Before:** 1 payslip per employee for current month only
@@ -143,7 +145,7 @@ CREATE TABLE IF NOT EXISTS payroll (
 |-------|---------|
 | employees | 50 |
 | users | 50 |
-| leaves | ~100-150 (spread across 1 year) |
+| leaves | ~1,200 (50 employees x 24 leaves spread across 1 year) |
 | attendance | ~4,050 (50 employees x 90 days x 90% attendance) |
 | payroll | ~2,400 (50 employees x 12 months x 4 weeks) |
 
