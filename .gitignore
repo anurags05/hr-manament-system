@@ -2,7 +2,7 @@
 // *.md
 *.txt
 *.env
-// *.pdf
+//*.pdf
 *.docx
 
 #Specific Exclusions
@@ -22,6 +22,9 @@
 !rbacmodule.md
 !LABORATORY MANUAL.PDF"
 !runtime.txt
+!.env.example
+!render.yaml
+!README.md
 
 #python cache
 __pycache__/
