@@ -952,12 +952,12 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    async function renderLeaves(container, month = getCurrentMonth()) {
+    async function renderLeaves(container, month) {
         const userRole = state.currentUser.role;
         if (userRole === 'hr') {
-            await renderLeavesHR(container, month);
+            await renderLeavesHR(container);
         } else {
-            await renderLeavesEmployee(container, month);
+            await renderLeavesEmployee(container, month || getCurrentMonth());
         }
     }
 
