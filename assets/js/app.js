@@ -2,7 +2,7 @@
  * HR Pro - Main Application Logic (RBAC Edition)
  */
 
-const API_BASE_URL = 'http://127.0.0.1:5000/api';
+const API_BASE_URL = '/api';
 
 const rolePermissions = {
     employee: ['dashboard', 'leaves', 'attendance', 'payslip'],

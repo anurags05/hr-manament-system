@@ -30,3 +30,4 @@ xdg==6.0.0
 zipp==3.23.0
 bcrypt==5.0.0
 Faker==40.4.0
+gunicorn==23.0.0
