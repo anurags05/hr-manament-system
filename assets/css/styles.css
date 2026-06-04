@@ -1323,7 +1323,7 @@ ul {
 
 .login-wrapper {
     width: 100%;
-    max-width: 420px;
+    max-width: 720px;
     padding: var(--space-lg);
 }
 
@@ -1565,4 +1565,74 @@ ul {
 /* Hide nav items by default (shown via JS based on role) */
 #nav-list li[data-page] {
     display: none;
+}
+
+.demo-credentials {
+    width: 100%;
+    margin-top: var(--space-xl);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--border-color);
+}
+.demo-credentials-title {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-md);
+}
+.role-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-md);
+}
+.role-card {
+    cursor: pointer;
+    padding: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    text-align: left;
+    font-family: inherit;
+    color: var(--text-primary);
+    transition: border-color 0.2s, transform 0.2s;
+}
+.role-card:hover {
+    border-color: var(--accent-color);
+    transform: translateY(-2px);
+}
+.role-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--accent-color);
+}
+.role-card-header i {
+    width: 18px;
+    height: 18px;
+}
+.role-card-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+    min-height: 2.7em;
+}
+.role-card-cred {
+    font-size: 0.72rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    color: var(--text-secondary);
+    margin-top: auto;
+    align-self: flex-start;
+}
+@media (max-width: 600px) {
+    .role-cards { grid-template-columns: 1fr; }
 }

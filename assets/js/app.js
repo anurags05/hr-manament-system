@@ -80,7 +80,18 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('app-container').style.display = 'none';
         document.getElementById('login-container').style.display = 'flex';
         setupLoginListeners();
+        setupDemoCredentials();
         if (window.lucide) lucide.createIcons();
+    }
+
+    function setupDemoCredentials() {
+        document.querySelectorAll('.role-card').forEach(card => {
+            card.onclick = () => {
+                document.getElementById('login-emp-id').value = card.dataset.empId;
+                document.getElementById('login-password').value = card.dataset.password;
+                document.getElementById('login-emp-id').focus();
+            };
+        });
     }
 
     function showApp() {
