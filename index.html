@@ -1,181 +1,314 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>HR Pro | Employee Management System</title>
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="stylesheet" href="assets/css/styles.css" />
+        <script src="https://unpkg.com/lucide@latest"></script>
+        <link
+            rel="canonical"
+            href="https://hr-management-system-l06v.onrender.com/"
+        />
+        <script>
+            window.location.replace(
+                "https://hr-management-system-l06v.onrender.com/",
+            );
+        </script>
+    </head>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HR Pro | Employee Management System</title>
-    <link rel="icon" type="image/svg+xml"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="assets/css/styles.css">
-    <script src="https://unpkg.com/lucide@latest"></script>
-</head>
+    <body>
+        <div id="app-container" style="display: none">
+            <div id="app">
+                <aside id="sidebar" class="glass">
+                    <div class="logo">
+                        <i data-lucide="shield-check" class="accent"></i>
+                        <span>HR Pro</span>
+                    </div>
+                    <nav>
+                        <ul id="nav-list">
+                            <li class="active" data-page="dashboard">
+                                <a href="#"
+                                    ><i data-lucide="layout-dashboard"></i>
+                                    Dashboard</a
+                                >
+                            </li>
+                            <li data-page="directory">
+                                <a href="#"
+                                    ><i data-lucide="users"></i> Directory</a
+                                >
+                            </li>
+                            <li data-page="leaves">
+                                <a href="#"
+                                    ><i data-lucide="calendar"></i> Leaves</a
+                                >
+                            </li>
+                            <li data-page="attendance">
+                                <a href="#"
+                                    ><i data-lucide="clock"></i> Attendance</a
+                                >
+                            </li>
+                            <li data-page="payroll">
+                                <a href="#"
+                                    ><i data-lucide="credit-card"></i>
+                                    Payroll</a
+                                >
+                            </li>
+                            <li data-page="payslip">
+                                <a href="#"
+                                    ><i data-lucide="file-text"></i> Payslip</a
+                                >
+                            </li>
+                        </ul>
+                    </nav>
+                </aside>
 
-<body>
-    <div id="app-container" style="display: none;">
-        <div id="app">
-            <aside id="sidebar" class="glass">
-                <div class="logo">
-                    <i data-lucide="shield-check" class="accent"></i>
-                    <span>HR Pro</span>
-                </div>
-                <nav>
-                    <ul id="nav-list">
-                        <li class="active" data-page="dashboard"><a href="#"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
-                        <li data-page="directory"><a href="#"><i data-lucide="users"></i> Directory</a></li>
-                        <li data-page="leaves"><a href="#"><i data-lucide="calendar"></i> Leaves</a></li>
-                        <li data-page="attendance"><a href="#"><i data-lucide="clock"></i> Attendance</a></li>
-                        <li data-page="payroll"><a href="#"><i data-lucide="credit-card"></i> Payroll</a></li>
-                        <li data-page="payslip"><a href="#"><i data-lucide="file-text"></i> Payslip</a></li>
-                    </ul>
-                </nav>
-            </aside>
+                <main id="main-content">
+                    <header id="top-bar" class="glass">
+                        <div class="search-bar">
+                            <i data-lucide="search"></i>
+                            <input
+                                type="text"
+                                placeholder="Click or Press Ctrl + K to search..."
+                            />
+                        </div>
+                        <div class="user-profile">
+                            <div class="notifications">
+                                <i data-lucide="bell"></i>
+                                <span class="badge"></span>
+                                <div
+                                    class="notification-dropdown"
+                                    id="notification-dropdown"
+                                >
+                                    <div class="dropdown-header">
+                                        <h4>Notifications</h4>
+                                        <button onclick="window.markAllRead()">
+                                            Mark all as read
+                                        </button>
+                                    </div>
+                                    <div
+                                        class="notification-list"
+                                        id="notification-list"
+                                    ></div>
+                                    <div class="dropdown-footer">
+                                        <a href="#">View all alerts</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                class="theme-toggle"
+                                id="theme-toggle"
+                                style="
+                                    cursor: pointer;
+                                    color: var(--text-secondary);
+                                "
+                            >
+                                <i data-lucide="moon"></i>
+                            </div>
+                            <div
+                                class="profile-wrapper"
+                                id="profile-wrapper"
+                                style="
+                                    cursor: pointer;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: var(--space-md);
+                                "
+                            >
+                                <img
+                                    src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"
+                                    alt="User"
+                                    class="avatar"
+                                    id="user-avatar"
+                                />
+                                <span id="user-name">Admin</span>
+                                <div
+                                    class="profile-dropdown"
+                                    id="profile-dropdown"
+                                >
+                                    <div class="profile-dropdown-header">
+                                        <img
+                                            src=""
+                                            alt=""
+                                            class="profile-dropdown-avatar"
+                                            id="dropdown-avatar"
+                                        />
+                                        <div>
+                                            <h4 id="dropdown-name"></h4>
+                                            <p id="dropdown-role"></p>
+                                        </div>
+                                    </div>
+                                    <div class="profile-dropdown-body">
+                                        <div class="profile-detail-row">
+                                            <i data-lucide="building-2"></i>
+                                            <span id="dropdown-dept"></span>
+                                        </div>
+                                        <div class="profile-detail-row">
+                                            <i data-lucide="mail"></i>
+                                            <span id="dropdown-email"></span>
+                                        </div>
+                                        <div class="profile-detail-row">
+                                            <i data-lucide="calendar"></i>
+                                            <span id="dropdown-joined"></span>
+                                        </div>
+                                    </div>
+                                    <div class="profile-dropdown-footer">
+                                        <button
+                                            id="btn-logout"
+                                            class="btn-logout-profile"
+                                            title="Logout"
+                                        >
+                                            <i data-lucide="log-out"></i> Logout
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
 
-            <main id="main-content">
-                <header id="top-bar" class="glass">
-                    <div class="search-bar">
+                    <section id="view-container" class="container">
+                        <h1>Welcome to HR Pro</h1>
+                        <p>Establishing the foundation...</p>
+                    </section>
+                </main>
+            </div>
+
+            <div class="modal-overlay search-palette" id="search-palette">
+                <div class="search-modal glass">
+                    <div class="search-input-wrapper">
                         <i data-lucide="search"></i>
-                        <input type="text" placeholder="Click or Press Ctrl + K to search...">
+                        <input
+                            type="text"
+                            id="palette-input"
+                            placeholder="Search features or employees (Ctrl + K)..."
+                            autocomplete="off"
+                        />
+                        <kbd>/</kbd>
                     </div>
-                    <div class="user-profile">
-                        <div class="notifications">
-                            <i data-lucide="bell"></i>
-                            <span class="badge"></span>
-                            <div class="notification-dropdown" id="notification-dropdown">
-                                <div class="dropdown-header">
-                                    <h4>Notifications</h4>
-                                    <button onclick="window.markAllRead()">Mark all as read</button>
-                                </div>
-                                <div class="notification-list" id="notification-list"></div>
-                                <div class="dropdown-footer">
-                                    <a href="#">View all alerts</a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="theme-toggle" id="theme-toggle" style="cursor:pointer; color: var(--text-secondary);">
-                            <i data-lucide="moon"></i>
-                        </div>
-                        <div class="profile-wrapper" id="profile-wrapper" style="cursor:pointer; display:flex; align-items:center; gap: var(--space-md);">
-                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="User" class="avatar" id="user-avatar">
-                            <span id="user-name">Admin</span>
-                            <div class="profile-dropdown" id="profile-dropdown">
-                                <div class="profile-dropdown-header">
-                                    <img src="" alt="" class="profile-dropdown-avatar" id="dropdown-avatar">
-                                    <div>
-                                        <h4 id="dropdown-name"></h4>
-                                        <p id="dropdown-role"></p>
-                                    </div>
-                                </div>
-                                <div class="profile-dropdown-body">
-                                    <div class="profile-detail-row">
-                                        <i data-lucide="building-2"></i>
-                                        <span id="dropdown-dept"></span>
-                                    </div>
-                                    <div class="profile-detail-row">
-                                        <i data-lucide="mail"></i>
-                                        <span id="dropdown-email"></span>
-                                    </div>
-                                    <div class="profile-detail-row">
-                                        <i data-lucide="calendar"></i>
-                                        <span id="dropdown-joined"></span>
-                                    </div>
-                                </div>
-                                <div class="profile-dropdown-footer">
-                                    <button id="btn-logout" class="btn-logout-profile" title="Logout">
-                                        <i data-lucide="log-out"></i> Logout
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </header>
-
-                <section id="view-container" class="container">
-                    <h1>Welcome to HR Pro</h1>
-                    <p>Establishing the foundation...</p>
-                </section>
-            </main>
-        </div>
-
-        <div class="modal-overlay search-palette" id="search-palette">
-            <div class="search-modal glass">
-                <div class="search-input-wrapper">
-                    <i data-lucide="search"></i>
-                    <input type="text" id="palette-input" placeholder="Search features or employees (Ctrl + K)..."
-                        autocomplete="off">
-                    <kbd>/</kbd>
-                </div>
-                <div class="search-results" id="palette-results"></div>
-                <div class="search-footer">
-                    <span><kbd>↑↓</kbd> Navigate</span>
-                    <span><kbd>Enter</kbd> Select</span>
-                    <span><kbd>Esc</kbd> Close</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="login-container">
-        <div class="login-wrapper">
-            <div class="login-box glass">
-                <div class="login-header">
-                    <i data-lucide="shield-check" class="login-logo accent"></i>
-                    <h1>HR Pro</h1>
-                    <p>Employee Management System</p>
-                </div>
-                <form id="login-form">
-                    <div class="form-group">
-                        <label for="login-emp-id">Employee ID</label>
-                        <input type="number" id="login-emp-id" placeholder="Enter your employee ID" required min="1">
-                    </div>
-                    <div class="form-group">
-                        <label for="login-password">Password</label>
-                        <input type="password" id="login-password" placeholder="Enter your password" required>
-                    </div>
-                    <div id="login-error" class="login-error" style="display: none;"></div>
-                    <button type="submit" class="btn-primary login-btn" id="btn-login">
-                        <i data-lucide="log-in"></i> Login
-                    </button>
-                </form>
-                <div class="demo-credentials">
-                    <p class="demo-credentials-title">Demo Accounts</p>
-                    <div class="role-cards">
-                        <button type="button" class="role-card" data-emp-id="1" data-password="password123">
-                            <div class="role-card-header">
-                                <i data-lucide="shield-check"></i>
-                                <span>General Manager</span>
-                            </div>
-                            <p class="role-card-desc">Full system access, oversees all operations</p>
-                            <code class="role-card-cred">ID 1 &middot; password123</code>
-                        </button>
-                        <button type="button" class="role-card" data-emp-id="2" data-password="password123">
-                            <div class="role-card-header">
-                                <i data-lucide="user-cog"></i>
-                                <span>HR Manager</span>
-                            </div>
-                            <p class="role-card-desc">Manage directory, leaves, and payroll</p>
-                            <code class="role-card-cred">ID 2 &middot; password123</code>
-                        </button>
-                        <button type="button" class="role-card" data-emp-id="5" data-password="password123">
-                            <div class="role-card-header">
-                                <i data-lucide="user"></i>
-                                <span>Employee</span>
-                            </div>
-                            <p class="role-card-desc">View own leaves, attendance, and payslip</p>
-                            <code class="role-card-cred">ID 5 &middot; password123</code>
-                        </button>
+                    <div class="search-results" id="palette-results"></div>
+                    <div class="search-footer">
+                        <span><kbd>↑↓</kbd> Navigate</span>
+                        <span><kbd>Enter</kbd> Select</span>
+                        <span><kbd>Esc</kbd> Close</span>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <script src="assets/js/app.js"></script>
-    <script>
-        lucide.createIcons();
-    </script>
-</body>
+        <div id="login-container">
+            <div class="login-wrapper">
+                <div class="login-box glass">
+                    <div class="login-header">
+                        <i
+                            data-lucide="shield-check"
+                            class="login-logo accent"
+                        ></i>
+                        <h1>HR Pro</h1>
+                        <p>Employee Management System</p>
+                    </div>
+                    <form id="login-form">
+                        <div class="form-group">
+                            <label for="login-emp-id">Employee ID</label>
+                            <input
+                                type="number"
+                                id="login-emp-id"
+                                placeholder="Enter your employee ID"
+                                required
+                                min="1"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Password</label>
+                            <input
+                                type="password"
+                                id="login-password"
+                                placeholder="Enter your password"
+                                required
+                            />
+                        </div>
+                        <div
+                            id="login-error"
+                            class="login-error"
+                            style="display: none"
+                        ></div>
+                        <button
+                            type="submit"
+                            class="btn-primary login-btn"
+                            id="btn-login"
+                        >
+                            <i data-lucide="log-in"></i> Login
+                        </button>
+                    </form>
+                    <div class="demo-credentials">
+                        <p class="demo-credentials-title">Demo Accounts</p>
+                        <div class="role-cards">
+                            <button
+                                type="button"
+                                class="role-card"
+                                data-emp-id="1"
+                                data-password="password123"
+                            >
+                                <div class="role-card-header">
+                                    <i data-lucide="shield-check"></i>
+                                    <span>General Manager</span>
+                                </div>
+                                <p class="role-card-desc">
+                                    Full system access, oversees all operations
+                                </p>
+                                <code class="role-card-cred"
+                                    >ID 1 &middot; password123</code
+                                >
+                            </button>
+                            <button
+                                type="button"
+                                class="role-card"
+                                data-emp-id="2"
+                                data-password="password123"
+                            >
+                                <div class="role-card-header">
+                                    <i data-lucide="user-cog"></i>
+                                    <span>HR Manager</span>
+                                </div>
+                                <p class="role-card-desc">
+                                    Manage directory, leaves, and payroll
+                                </p>
+                                <code class="role-card-cred"
+                                    >ID 2 &middot; password123</code
+                                >
+                            </button>
+                            <button
+                                type="button"
+                                class="role-card"
+                                data-emp-id="5"
+                                data-password="password123"
+                            >
+                                <div class="role-card-header">
+                                    <i data-lucide="user"></i>
+                                    <span>Employee</span>
+                                </div>
+                                <p class="role-card-desc">
+                                    View own leaves, attendance, and payslip
+                                </p>
+                                <code class="role-card-cred"
+                                    >ID 5 &middot; password123</code
+                                >
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
+        <script src="assets/js/app.js"></script>
+        <script>
+            lucide.createIcons();
+        </script>
+    </body>
 </html>
